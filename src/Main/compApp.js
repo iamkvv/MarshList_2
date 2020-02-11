@@ -8,34 +8,12 @@ import ListsNotFound_Create from '../ListsNotFound/contListsNotFound'
 import RouteList_CRUD from '../RouteList/contRouteList'
 import TaskList from '../TaskList/taskList'
 
-import Test from './test'
+import BlockLoading from './blockLoading'
+
+//import Test from './test'
 //import ReactDOMServer from 'react-dom/server'
 
-const BlockLoading = () => {
-    return (
-        <div style={{
-            position: 'absolute',
-            backgroundColor: 'white',
-            opacity: 0.4,
-            zIndex: 10000,
-            width: '100%',
-            height: '100%',
-            display: 'none'
 
-        }}>
-            <Icon style={{
-                position: 'absolute',
-                width: 100,
-                height: 100,
-                fontSize: '50px',
-                color: '1890ff',
-                left: '50%',
-                top: '40%',
-                transform: 'translate(-50%, -50%)'
-            }} type="loading" />
-        </div>
-    )
-}
 //
 //По Yandex -- https://yandex.ru/dev/yandex-apps-launch/maps/doc/concepts/yandexmaps-web-docpage/#yandexmaps-web__search
 //Это может сработать для маршрута  -- https://yandex.ru/maps/?whatshere[point]=61.3991244,55.1633244&whatshere[zoom]=17

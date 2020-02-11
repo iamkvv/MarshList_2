@@ -13,23 +13,21 @@ const getCompanies = (authData) => {
     return { type: "GET_ALLCOMPANIES", auth: authData }
 }
 
-const addTask = (authData, selectedML_Id, taskRecords) => {
-    //   resp_id, title, task, gis, company_id, taskRec) => {
-    return { type: "ADD_TASK", auth: authData, selectedML_Id: selectedML_Id, taskRecords: taskRecords }//     resp_id: resp_id, title: title, task: task, gis: gis, company_id: company_id, taskRec: taskRec }
+const startingTasks = (authData, taskRecords) => {
+    return { type: "STARTING_TASKS", auth: authData, taskRecords: taskRecords }
 }
 
 const selectTaskList = (tl) => {
     return { type: "SELECTED_TASKLIST", selectedTaskList: tl }
 }
 
-const deleteTaskList = (authData, id) => {
-    return { type: "DELETE_TASKLIST", auth: authData, id: id }
+const deleteTaskList = (authData, record) => {
+    return { type: "DELETE_TASKLIST", auth: authData, taskListRecord: record }
 }
 
 const getLids = (authData) => {
     return { type: "GET_LIDS", auth: authData }
 }
-
 
 const BProp = (metaTsk, title) => {//Возврашает PROPERTY_n по русс. имени поля
     for (let fld of Object.keys(metaTsk)) {
@@ -41,10 +39,11 @@ const DtoP = (dispatch) => {
     return {
         getCompanies: (a) => dispatch(getCompanies(a)),
         getLids: (a) => dispatch(getLids(a)),
-        addTask: (a, selectedML_Id, taskRecords) => dispatch(addTask(a, selectedML_Id, taskRecords)),
-        deleteTaskList: (a, id) => dispatch(deleteTaskList(a, id)),
-        selectTaskList: (tl) => dispatch(selectTaskList(tl))
 
+        startingTasks: (a, taskRecords) => dispatch(startingTasks(a, taskRecords)),
+
+        deleteTaskList: (a, rec) => dispatch(deleteTaskList(a, rec)),
+        selectTaskList: (tl) => dispatch(selectTaskList(tl))
     }
 }
 
@@ -141,10 +140,10 @@ class Task_List extends Component {
     }
 
     manageUpdateTask_Visible = () => {
-        // if (!this.props.selectedMarshList) {
-        //     this.warning("Не выбран маршрутный лист.")
-        //     return
-        // }
+        if (this.props.selectedTaskList[BProp(this.props.taskListFields, "Статус")] !== '-') {
+            this.warning("Задача выполняется. Изменить или удалить ее нельзя.");
+            return
+        }
 
         if (!this.props.companies.length) { //Если компании еще не получены, сага должна их получить
             this.props.getCompanies(this.props.auth)
@@ -173,30 +172,16 @@ class Task_List extends Component {
     }
 
 
-    buildTasks = () => {
+    StartingUserTasks = () => {
         if (!this.props.selectedMarshList) {
             this.warning("Не выбран маршрутный лист.")
             return
         }
 
-
-        console.log("this.props.tasksByML", this.props.tasksByML)
-
-        this.setState({ canAddTask: false })
-
-        this.props.addTask(this.props.auth,
-            this.props.selectedMarshList.ID,
-            this.props.tasksByML);
-
-        let self = this;
-        setTimeout(() => {
-            self.setState({ canAddTask: true })
-        }, 1500)
-
-
+        this.props.startingTasks(this.props.auth, this.props.tasksByML);
     }
 
-
+    //Это потом удалить, оставить только BProp
     BPropTL = (title) => {
         for (let fld of Object.keys(this.props.taskListFields)) {
             if (this.props.taskListFields[fld].NAME === title) return fld
@@ -204,24 +189,24 @@ class Task_List extends Component {
     }
 
     deletetaskList = () => {
-        this.props.deleteTaskList(this.props.auth, this.state.selectedTaskList.ID);
+        if (this.props.selectedTaskList[BProp(this.props.taskListFields, "Статус")] !== '-') {
+            this.warning("Задача выполняется. Изменить или удалить ее нельзя.");
+            return
+        }
+
+        this.props.deleteTaskList(this.props.auth, this.props.selectedTaskList);  //this.state.selectedTaskList.ID);
 
         setTimeout(() => {
             this.setState({ showDeleteModal: false })
-        }, 1000)
+        }, 500)
     }
 
     onCancelDelete = () => {
         this.setState({ showDeleteModal: false })
     }
 
-    // OnLids = () => {
-    //     this.props.getLids(this.props.auth)
-    // }
-
     render() {
         console.log("Все Свойства Заданий", this.props)
-        //<button onClick={this.OnLids}>Лиды</button>
         return (
             <div>
                 <AddTask visible={this.state.addTaskformVisible}
@@ -229,7 +214,6 @@ class Task_List extends Component {
                 />
                 <UpdateTask visible={this.state.updateTaskformVisible}
                     manageUpdateTask_Visible={this.manageUpdateTask_Visible} />
-
 
                 <YandexRoutes visible={this.state.yandexRoutesVisible}
                     manageYandexRoute_Visible={this.manageYandexRoute_Visible}
@@ -239,7 +223,7 @@ class Task_List extends Component {
                     <Col span={12}>
                         {/** <ButtonGroup >  */}
                         <Button style={{ marginLeft: 10, width: 150 }} type="primary" size="small" onClick={this.manageAddTask_Visible}>Добавить маршрут</Button>
-                        <Button disabled={!this.state.canAddTask} style={{ marginLeft: 10, width: 150 }} type="primary" size="small" onClick={this.buildTasks}>Поставить задачи</Button>
+                        <Button style={{ marginLeft: 10, width: 150 }} type="primary" size="small" onClick={this.StartingUserTasks}>Поставить задачи</Button>
                         {/** </ButtonGroup>  */}
 
                     </Col>
@@ -268,8 +252,11 @@ class Task_List extends Component {
                     columns={this.createColumns()}
                     dataSource={this.props.tasksByML}
                     onRow={(record, rowIndex) => {
-                        var self = this;
+
                         return {
+                            onMouseEnter: event => {
+                                this.props.selectTaskList(record);
+                            },
                             onClick: event => {
                                 this.props.selectTaskList(record);
 
@@ -285,11 +272,8 @@ class Task_List extends Component {
                                 if (event.target.text === 'Изменить') {
                                     console.log(this.props, record, rowIndex);
                                     this.manageUpdateTask_Visible();
-                                    // this.setState(
-                                    //     {
-                                    //         updateTaskformVisible: true
-                                    //     })
                                 }
+
                             }
                         }
                     }

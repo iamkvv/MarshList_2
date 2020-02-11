@@ -8,13 +8,19 @@ const { TextArea } = Input;
 // const getUsers = (authData) => {
 //     return { type: "START_GET_USERS", auth: authData }
 // }
-const updateTaskList = (authData, params) => {
-    return { type: "UPDATE_TASKLIST", auth: authData, params: params }
+// const updateTaskList = (authData, params) => {
+//     return { type: "UPDATE_TASKLIST", auth: authData, params: params }
+// }
+
+
+const updateUserTask = (authData, ut_params, lt_params) => {
+    return { type: "UPDATE_USERTASK", auth: authData, userTaskParams: ut_params, listTaskParams: lt_params }
 }
 
 const DtoP = (dispatch) => {
     return {
-        updateTaskList: (a, p) => dispatch(updateTaskList(a, p))
+        //updateTaskList: (a, p) => dispatch(updateTaskList(a, p)),
+        updateUserTask: (a, utpars, ltpars) => dispatch(updateUserTask(a, utpars, ltpars))
     }
 }
 
@@ -23,6 +29,8 @@ const StoP = (state) => {
         auth: state.auth,
         //??marshListFields: state.marshListFields, //метаданные полей MarshList
         taskListFields: state.taskListFields,
+        marshListFields: state.marshListFields, //метаданные полей MarshList
+        selectedMarshList: state.selectedMarshList,
         //  marshListData: state.marshListData, //все марш. листы,
         selectedTaskList: state.selectedTaskList,
         companies: state.companies,
@@ -41,11 +49,14 @@ const Update_Task = Form.create({ name: 'changeTask_modal' })(
         }
 
 
-        // BProp = (title) => {
-        //     for (let fld of Object.keys(this.props.marshListFields)) {
-        //         if (this.props.marshListFields[fld].NAME === title) return fld
-        //     }
-        // }
+
+        BProp = (title) => {
+            for (let fld of Object.keys(this.props.marshListFields)) {
+                if (this.props.marshListFields[fld].NAME === title) return fld
+            }
+        }
+
+
 
         BPropTL = (title) => {
             for (let fld of Object.keys(this.props.taskListFields)) {
@@ -68,29 +79,68 @@ const Update_Task = Form.create({ name: 'changeTask_modal' })(
 
                     console.log('Company', values, company);
 
-                    let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&ELEMENT_ID=" + this.props.selectedTaskList.ID + "&" +
-                        "fields[" + this.BPropTL("Название") + "]" + "=Задание" + "&" +
-                        "fields[" + this.BPropTL("Внешний ключ") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Внешний ключ")] + "&" +
-                        "fields[" + this.BPropTL("Дата") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Дата")] + "&" +
-                        "fields[" + this.BPropTL("ID Исполнителя") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("ID Исполнителя")] + "&" +
-                        "fields[" + this.BPropTL("Исполнитель") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Исполнитель")] + "&" +
-                        "fields[" + this.BPropTL("ID Компании") + "]" + "=" + company.ID + "&" +
-                        "fields[" + this.BPropTL("Компания") + "]" + "=" + company.TITLE + "&" +
+                    ///Сначала удаляем Б24-задачу, создаем ее заново и обновляем запись списка --1-й вар-т
+                    //Удаляем задачу и задание и создаем все заново -- можно использовать готовые функции добавления  НЕТ!!! -изменится ID и порядок
 
-                        //"fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Юридический адрес")] + "&" +
-                        "fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Адрес")].split("|")[0] + "&" +
+                    // получим ID задачи
 
-                        "fields[" + this.BPropTL("Гис") + "]" + "=" + company[this.BPropComp("2ГИС-адрес")] + "&" +
-                        "fields[" + this.BPropTL("Телефон") + "]" + "=" + (company.hasOwnProperty("PHONE") ? company.PHONE[0].VALUE : " ") + "&" +
-                        "fields[" + this.BPropTL("Задание") + "]" + "=" + "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>" + "&" +
-                        "fields[" + this.BPropTL("ID Задачи") + "]" + "=0" + "&" //+
-                    //"ELEMENT_CODE=" + (new Date().getTime())
+                    // let oldTaskId = this.props.selectedTaskList[this.BPropTL("ID Задачи")];
 
-                    //debugger;
-                    console.log(params)
 
-                    this.props.updateTaskList(this.props.auth, params);
+                    let UserTaskParams = {//данные для Б24-задачи
+                        responsible_id: this.props.selectedMarshList[this.BProp("ID Исполнителя")],
+                        address: company[this.BPropComp("Адрес")].split('|')[0],
+                        gis: company[this.BPropComp("2ГИС-адрес")],
+                        company_id: company.ID,
+                        task: "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>"
+                    }
 
+
+                    let TaskListParams = {//данные для List-задачи
+                        id: this.props.selectedTaskList.ID,
+                        name: "Задание",
+                        fk: this.props.selectedMarshList.ID,
+                        date: this.props.selectedMarshList[this.BProp("Дата")],
+                        responsible_id: this.props.selectedMarshList[this.BProp("ID Исполнителя")],
+                        responsible: this.props.selectedMarshList[this.BProp("Исполнитель")],
+                        company_id: company.ID,
+                        company: company.TITLE,
+                        address: company[this.BPropComp("Адрес")].split('|')[0],
+                        gis: company[this.BPropComp("2ГИС-адрес")],
+                        phone: (company.hasOwnProperty("PHONE") ? company.PHONE[0].VALUE : " "),
+                        task: "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>",
+                        task_id: this.props.selectedTaskList[this.BPropTL("ID Задачи")],
+                        task_status: this.props.selectedTaskList[this.BPropTL("Статус")]
+                    }
+
+                    this.props.updateUserTask(this.props.auth, UserTaskParams, TaskListParams)
+
+                    /*
+                                        return
+                    
+                                        let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&ELEMENT_ID=" + this.props.selectedTaskList.ID + "&" +
+                                            "fields[" + this.BPropTL("Название") + "]" + "=Задание" + "&" +
+                                            "fields[" + this.BPropTL("Внешний ключ") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Внешний ключ")] + "&" +
+                                            "fields[" + this.BPropTL("Дата") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Дата")] + "&" +
+                                            "fields[" + this.BPropTL("ID Исполнителя") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("ID Исполнителя")] + "&" +
+                                            "fields[" + this.BPropTL("Исполнитель") + "]" + "=" + this.props.selectedTaskList[this.BPropTL("Исполнитель")] + "&" +
+                                            "fields[" + this.BPropTL("ID Компании") + "]" + "=" + company.ID + "&" +
+                                            "fields[" + this.BPropTL("Компания") + "]" + "=" + company.TITLE + "&" +
+                    
+                                            //"fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Юридический адрес")] + "&" +
+                                            "fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Адрес")].split("|")[0] + "&" +
+                    
+                                            "fields[" + this.BPropTL("Гис") + "]" + "=" + company[this.BPropComp("2ГИС-адрес")] + "&" +
+                                            "fields[" + this.BPropTL("Телефон") + "]" + "=" + (company.hasOwnProperty("PHONE") ? company.PHONE[0].VALUE : " ") + "&" +
+                                            "fields[" + this.BPropTL("Задание") + "]" + "=" + "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>" + "&" +
+                                            "fields[" + this.BPropTL("ID Задачи") + "]" + "=0" + "&" //+
+                                        //"ELEMENT_CODE=" + (new Date().getTime())
+                    
+                                        //debugger;
+                                        console.log(params)
+                    
+                                        //????  this.props.updateTaskList(this.props.auth, params);
+                    */
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {
                         self.props.form.resetFields();

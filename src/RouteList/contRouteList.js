@@ -29,7 +29,7 @@ const StoP = (state) => {
         marshListData: state.marshListData,
         marshListFields: state.marshListFields,
         selectedMarshList: state.selectedMarshList,
-        taskListData: state.taskListData //TMP!!!
+        //  taskListData: state.taskListData //TMP!!!
     }
 }
 

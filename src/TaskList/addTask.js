@@ -9,13 +9,19 @@ const { TextArea } = Input;
 // const getUsers = (authData) => {
 //     return { type: "START_GET_USERS", auth: authData }
 // }
-const addTaskList = (authData, params) => {
-    return { type: "ADD_TASKLIST", auth: authData, params: params }
+
+const addNewUserTask = (authData, ut_params, lt_params) => {
+    return { type: "ADD_NEW_USERTASK", auth: authData, userTaskParams: ut_params, listTaskParams: lt_params }
 }
+
+// const addTaskList = (authData, params) => {
+//     return { type: "ADD_TASKLIST", auth: authData, params: params }
+// }
 
 const DtoP = (dispatch) => {
     return {
-        addTaskList: (a, p) => dispatch(addTaskList(a, p))
+        // addTaskList: (a, p) => dispatch(addTaskList(a, p)),
+        addNewUserTask: (a, utpars, ltpars) => dispatch(addNewUserTask(a, utpars, ltpars))
     }
 }
 
@@ -41,19 +47,6 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
             this.props.form.resetFields()
         }
 
-        // onCreateButtonClick = () => {
-        //     //ВЫЧИСТИТЬ ГОВНОКОД
-        //     if (!this.props.users.length) {
-        //         this.props.getUsers(this.props.auth)
-        //         this.setState({ visible: true })
-        //     }
-        //     let self = this;
-        //     setTimeout(() => {
-        //         if (self.props.users.length > 0) {
-        //             self.setState({ visible: true })
-        //         }
-        //     }, 200)
-        // }
 
         BProp = (title) => {
             for (let fld of Object.keys(this.props.marshListFields)) {
@@ -71,8 +64,6 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
             }
         }
 
-
-
         handleSubmit = e => {
             e.preventDefault();
             let self = this;
@@ -83,29 +74,34 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
 
                     console.log('Company', company);
 
-                    let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&" +
-                        "fields[" + this.BPropTL("Название") + "]" + "=Задание" + "&" +
-                        "fields[" + this.BPropTL("Внешний ключ") + "]" + "=" + this.props.selectedMarshList.ID + "&" +
-                        "fields[" + this.BPropTL("Дата") + "]" + "=" + this.props.selectedMarshList[this.BProp("Дата")] + "&" +
-                        "fields[" + this.BPropTL("ID Исполнителя") + "]" + "=" + this.props.selectedMarshList[this.BProp("ID Исполнителя")] + "&" +
-                        "fields[" + this.BPropTL("Исполнитель") + "]" + "=" + this.props.selectedMarshList[this.BProp("Исполнитель")] + "&" +
-                        "fields[" + this.BPropTL("ID Компании") + "]" + "=" + company.ID + "&" +
-                        "fields[" + this.BPropTL("Компания") + "]" + "=" + company.TITLE + "&" +
+                    //Сначала добавляем задачу и получаем ее статус и ID 
+                    //С этими данными содаем задание в списке
 
-                        //"fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Юридический адрес")] + "&" +
-                        "fields[" + this.BPropTL("Адрес") + "]" + "=" + company[this.BPropComp("Адрес")].split('|')[0] + "&" +
+                    let UserTaskParams = {//данные для Б24-задачи
+                        responsible_id: this.props.selectedMarshList[this.BProp("ID Исполнителя")],
+                        address: company[this.BPropComp("Адрес")].split('|')[0],
+                        gis: company[this.BPropComp("2ГИС-адрес")],
+                        company_id: company.ID,
+                        task: "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>"
+                    }
 
-                        "fields[" + this.BPropTL("Гис") + "]" + "=" + company[this.BPropComp("2ГИС-адрес")] + "&" +
+                    let TaskListParams = {//данные для List-задачи
+                        name: "Задание",
+                        fk: this.props.selectedMarshList.ID,
+                        date: this.props.selectedMarshList[this.BProp("Дата")],
+                        responsible_id: this.props.selectedMarshList[this.BProp("ID Исполнителя")],
+                        responsible: this.props.selectedMarshList[this.BProp("Исполнитель")],
+                        company_id: company.ID,
+                        company: company.TITLE,
+                        address: company[this.BPropComp("Адрес")].split('|')[0],
+                        gis: company[this.BPropComp("2ГИС-адрес")],
+                        phone: (company.hasOwnProperty("PHONE") ? company.PHONE[0].VALUE : " "),
+                        task: "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>",
+                        task_id: null,
+                        task_status: null
+                    }
 
-                        "fields[" + this.BPropTL("Телефон") + "]" + "=" + (company.hasOwnProperty("PHONE") ? company.PHONE[0].VALUE : " ") + "&" +
-
-                        "fields[" + this.BPropTL("Задание") + "]" + "=" + "<p>" + values.task.replace(/\n/g, "<br/>") + "</p>" + "&" +
-                        "fields[" + this.BPropTL("ID Задачи") + "]" + "=0" + "&" +
-                        "ELEMENT_CODE=" + (new Date().getTime())
-
-                    console.log(params)
-
-                    this.props.addTaskList(this.props.auth, params);
+                    this.props.addNewUserTask(this.props.auth, UserTaskParams, TaskListParams)
 
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {

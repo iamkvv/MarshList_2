@@ -3,7 +3,7 @@ const checkAuth = () => { //вынести в Helper
     if (!window.BX24) {
         conf = {
             auth: {
-                token: '17cd3f5e004416ca0031392000000001201c0346dada31a15bf114ea1613236b7b48c5',
+                token: '769a415e004416ca0031392000000001201c0364b30d966d50c525cf134be66d304e2c',
                 expires_in: new Date().valueOf(),
                 refresh_token: "123456",
                 domain: "anywhere.bitrix24.ru"
@@ -45,13 +45,13 @@ const iniState = {
     selectedTaskList: null,
     // creatingLists: false, //строятся ли листы
     listsError: null, //опиание ошибки при работе со списками
-    somedata: { a: 1 }
+    newUserTask: null,// вновь созданная марш-ая задача (создается перед созданием записи в списке)
+    showLoading: false
 }
 
 const reducerApp = (state = iniState, action) => {
     switch (action.type) {
         case "CHECK_AUTH":
-            console.log("reducer CHECK_AUTH", action);
             return Object.assign({}, state, checkAuth());
 
         case "LISTS_ERROR":
@@ -61,7 +61,6 @@ const reducerApp = (state = iniState, action) => {
             return Object.assign({}, state, { marshList: action.marshList, taskList: action.taskList });
 
         case "NOTFOUND_LISTS":
-            console.log("case NOTFOUND_LISTS")
             return Object.assign({}, state, { marshList: false, taskList: false });
 
         case "LISTSFIELDS_METADATA":
@@ -87,6 +86,13 @@ const reducerApp = (state = iniState, action) => {
 
         case "COMPANY_FIELDS":
             return Object.assign({}, state, { companyFields: action.companyFields });
+
+        case "NEW_USERTASK":
+            return Object.assign({}, state, { newUserTask: action.newUserTask });
+
+        case "SHOW_LOADING":
+            return Object.assign({}, state, { showLoading: action.showLoading });
+
 
         // case "ADD_MARSHLIST": //потом использовать для progress
         //     debugger

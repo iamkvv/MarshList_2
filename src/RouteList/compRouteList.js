@@ -20,12 +20,10 @@ class RouteList extends Component {
         console.log("ForDELETE", this.props.auth, this.props.selectedMarshList);
         this.props.deleteMarshList(this.props.auth, this.props.selectedMarshList.ID);
         setTimeout(() => {
-            this.setState({ showDeleteModal: false })
+            this.setState({ showDeleteModal: false, selectedRowIndex: 0 })
         }, 300)
         //переместить курсор и удалить дочерние !!!
     }
-
-
 
     shouldComponentUpdate(nextProps, nextState) {
         if (!nextProps.marshListData)
@@ -33,7 +31,6 @@ class RouteList extends Component {
         else
             return true
     }
-
 
     createColumns = () => {
         if (this.props.marshListFields) {
@@ -107,7 +104,8 @@ class RouteList extends Component {
                             }}
                             pagination={{ pageSize: 5 }}
                             size="small"
-                            scroll={{ scrollToFirstRowOnChange: false }}
+                            //  scroll={{ scrollToFirstRowOnChange: true }}
+                            scrollToFirstRowOnChange={true}
                             //  rowSelection={rowSelection}
                             rowKey={rec => (rec.ID)}
                             columns={this.createColumns()}
@@ -117,7 +115,8 @@ class RouteList extends Component {
                                 var self = this;
                                 return {
                                     onClick: event => {
-                                        console.log("Click by ROW", event.target.text == 'Удалить', record, rowIndex);
+                                        console.log("rowIndex", rowIndex);
+                                        //console.log("Click by ROW", this.props, event.target.text == 'Удалить', record, rowIndex);
 
                                         self.setState({ selectedRowIndex: rowIndex });//, selectedMarshList: record })
                                         self.props.selectMarshList(record)
@@ -130,7 +129,6 @@ class RouteList extends Component {
 
                                         if (event.target.text == 'Изменить') {
                                             self.manageVisible()
-
                                         }
                                     }
                                 }
