@@ -1,15 +1,15 @@
 import React, { Component } from 'react'
-import { Modal, Divider, Table, Row, Col } from 'antd'
+import { Modal, Divider, Table, Pagination } from 'antd'
 
 import AddRouteList from '../AddRouteList/addRouteList'
 import ChangeRouteList from '../ChangeRouteList/changeRouteList'
-
 
 class RouteList extends Component {
     state = {
         selectedRowIndex: 0,
         showDeleteModal: false,
-        changeMarshListvisible: false
+        changeMarshListvisible: false,
+        currentPage: 1
     }
 
     onCancelDelete = () => {
@@ -17,12 +17,29 @@ class RouteList extends Component {
     }
 
     deleteMarshList = () => {
-        console.log("ForDELETE", this.props.auth, this.props.selectedMarshList);
         this.props.deleteMarshList(this.props.auth, this.props.selectedMarshList.ID);
         setTimeout(() => {
-            this.setState({ showDeleteModal: false, selectedRowIndex: 0 })
+            this.setState({ showDeleteModal: false })//, selectedRowIndex: 0 })
         }, 300)
         //переместить курсор и удалить дочерние !!!
+    }
+
+    componentDidUpdate = (prevProps, prevState) => {
+        //Установка таблицы после удаления марш.листа
+        if (this.props.selectedMarshList && prevProps.selectedMarshList) {
+            if (this.props.selectedMarshList.ID !== prevProps.selectedMarshList.ID) {
+
+                let prevPos = 0;
+                for (let i = 0; i < this.props.marshListData.length; i++) {
+                    if (this.props.marshListData[i].ID === this.props.selectedMarshList.ID) {
+                        prevPos = i
+                        break;
+                    }
+                }
+
+                this.setState({ selectedRowIndex: prevPos - (this.state.currentPage - 1) * 5 })
+            }
+        }
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -73,15 +90,20 @@ class RouteList extends Component {
             });
 
         }, 300)
+    }
 
+    onPageChange = (page) => {
+        this.props.selectMarshList(this.props.marshListData[(page - 1) * 5])
+        //debugger
+        this.setState({ currentPage: page, selectedRowIndex: 0 })
     }
 
     render() {
-        const { marshListData, marshList, marshListFields, auth } = this.props;
-        console.log("RouteList Component", this.props)
+        const { marshListData } = this.props;
+
         return (
             <div>
-                {true ?///this.props.marshListFields ?
+                {this.props.marshListData ?
                     <div>
                         <AddRouteList />
                         <ChangeRouteList manageVisible={this.manageVisible} changeMarshListvisible={this.state.changeMarshListvisible} />
@@ -100,9 +122,10 @@ class RouteList extends Component {
 
                         <Table style={{ backgroundColor: "#fdfdfd" }}
                             rowClassName={(record, index) => {
+                                // console.log("rowClassName--", record, index)
                                 if (index == this.state.selectedRowIndex) return "selected-routelist"
                             }}
-                            pagination={{ pageSize: 5 }}
+                            pagination={{ pageSize: 5, onChange: this.onPageChange }}
                             size="small"
                             //  scroll={{ scrollToFirstRowOnChange: true }}
                             scrollToFirstRowOnChange={true}
@@ -112,23 +135,19 @@ class RouteList extends Component {
                             dataSource={marshListData}
 
                             onRow={(record, rowIndex) => {
-                                var self = this;
                                 return {
                                     onClick: event => {
-                                        console.log("rowIndex", rowIndex);
-                                        //console.log("Click by ROW", this.props, event.target.text == 'Удалить', record, rowIndex);
-
-                                        self.setState({ selectedRowIndex: rowIndex });//, selectedMarshList: record })
-                                        self.props.selectMarshList(record)
+                                        this.setState({ selectedRowIndex: rowIndex });//, selectedMarshList: record })
+                                        this.props.selectMarshList(record)
 
                                         if (event.target.text == 'Удалить') {
-                                            self.setState({
+                                            this.setState({
                                                 showDeleteModal: true,
                                             });
                                         }
 
                                         if (event.target.text == 'Изменить') {
-                                            self.manageVisible()
+                                            this.manageVisible()
                                         }
                                     }
                                 }

@@ -1,8 +1,11 @@
 .App {
   font-family: 'Roboto Condensed', sans-serif;
   height: 100%;
+  min-height: 600px;
   /* min-height: 600px; */
-  background-color: #fffff5;
+  background-color: hsl(0, 0%, 95%);
+  padding-top: 5px;
+  padding-bottom: 50px;
   /* text-align: center;
   display: flex;
   flex-direction: column;
@@ -12,32 +15,6 @@
 .selected-routelist {
   /*для подсветки выбранного марш.листа*/
   background-color: beige;
-}
-
-
-/* .task-list-print {
-  display: block;
-  border-collapse: collapse;
-  margin: 0 auto;
-}
-
-.task-list-print tr td th {
-  border: 1px solid gray;
-} */
-
-.App-flex {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.App-heading {
-  background-color: #222;
-  color: #f8f8f8;
-  font-size: 6vh;
-  box-shadow: 0px 4px 4vh 4px rgba(34, 34, 34, 0.9);
-  z-index: 2;
 }
 
 .App-logo {

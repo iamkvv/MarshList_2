@@ -13,6 +13,14 @@ const Post = {
     }
 }
 
+const BProp = (title, fields) => {
+    for (let fld of Object.keys(fields)) {
+        if (fields[fld].NAME === title) return fld
+    }
+}
+
+export const MetaFields = { MarshList: null, TaskList: null }
+
 //метаданные всех списков
 export function fetchLists(auth) {
     let addr = "rest/lists.get";
@@ -137,12 +145,6 @@ export function updateMarshList(auth, params) {
 }
 
 
-const BProp = (title, fields) => {
-    for (let fld of Object.keys(fields)) {
-        if (fields[fld].NAME === title) return fld
-    }
-}
-
 //Все компании
 export function getCompanies(auth) {     // fields) {
     // let fld2gis = BProp("2ГИС-адрес", fields);
@@ -202,13 +204,13 @@ export function deleteTaskList(auth, elementid) {
         .then(response => response.json());
 }
 
-//Обновление задания в списке
-export function updateTaskList(auth, params) {
-    let addr = "rest/lists.element.update"
-    let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
-    return fetch(request, Post)
-        .then(response => response.json())
-}
+//??Обновление задания в списке
+// export function updateTaskList(auth, params) {
+//     let addr = "rest/lists.element.update"
+//     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
+//     return fetch(request, Post)
+//         .then(response => response.json())
+// }
 
 
 ///
@@ -248,13 +250,12 @@ export function addNewUserTask(auth, params) {
 }
 
 //Добавляет запись в список Заданий
-export function addTaskInList(auth, params, state) {
-    /// debugger
-    let metadata = state.taskListFields;
+export function addTaskInList(auth, params) {//, state) {
+    //let metadata = state.taskListFields;
+    let metadata = MetaFields.TaskList
     let addr = "rest/lists.element.add"
 
     let fldparams = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&ELEMENT_CODE=" + (new Date().getTime()) + "&" +
-
         "fields[" + BProp("Название", metadata) + "]" + "=" + params.name + "&" +
         "fields[" + BProp("Внешний ключ", metadata) + "]" + "=" + params.fk + "&" +
         "fields[" + BProp("Дата", metadata) + "]" + "=" + params.date + "&" +
@@ -267,10 +268,8 @@ export function addTaskInList(auth, params, state) {
         "fields[" + BProp("Телефон", metadata) + "]" + "=" + params.phone + "&" +
         "fields[" + BProp("Задание", metadata) + "]" + "=" + params.task + "&" +
         "fields[" + BProp("ID Задачи", metadata) + "]" + "=" + params.task_id + "&" +
-        //  "fields[" + BProp("Задача", metadata) + "]" + "=" + params.task_ref + "&" +
         "fields[" + BProp("Статус", metadata) + "]" + "=" + params.task_status
 
-    //debugger
     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${fldparams}`
     return fetch(request, Post)
         .then(response => response.json())
@@ -288,7 +287,8 @@ export function deleteUserTask(auth, id) {
 
 
 //Обновляет запись в списке заданий. Перед этим была удалена и заново создана Б24-задача
-export function updateTaskListRecord(auth, params, newdataTask, metadata) {
+export function updateTaskListRecord(auth, params, newdataTask) {// , metadata) {
+    let metadata = MetaFields.TaskList
     let addr = "rest/lists.element.update"
     let fldParams = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&ELEMENT_ID=" + params.id + "&" +
         "fields[" + BProp("Название", metadata) + "]" + "=" + params.name + "&" +
@@ -304,7 +304,6 @@ export function updateTaskListRecord(auth, params, newdataTask, metadata) {
         "fields[" + BProp("Задание", metadata) + "]" + "=" + params.task + "&" +
         "fields[" + BProp("ID Задачи", metadata) + "]" + "=" + newdataTask.task.id + "&" +
         "fields[" + BProp("Статус", metadata) + "]" + "=" + "-"
-
     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${fldParams}`
     return fetch(request, Post)
         .then(response => response.json())

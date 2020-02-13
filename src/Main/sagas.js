@@ -1,10 +1,11 @@
 import { all, select, call, put, takeEvery } from 'redux-saga/effects';
 import {
+    MetaFields,
     fetchLists, getFields, getListData, addList, addFields,
     getUsers, addMarshList,
     deleteMarshList, updateMarshList,
     getCompanies, getCompanyFields, addTaskList, getLids,
-    addUserTask, updateTaskListRecord, deleteTaskList, updateTaskList,
+    addUserTask, updateTaskListRecord, deleteTaskList,
     addNewUserTask, addTaskInList, deleteUserTask, startUserTask,
     updateTaskListRecordFlds
 } from '../bitrixApi'
@@ -19,20 +20,19 @@ function objValToVal(arr) {//значения полей PROPERTY_ являли�
         return d
     })
 }
+
+
 function* watchGetLists() {
     yield takeEvery("CHECK_LISTS", getLists)
 }
 
-
 function* getLists(action) {
     try {
-
         const data = yield call(fetchLists, action.auth);
         if (data.error) {
             yield put({ type: "LISTS_ERROR", description: data.error_description });
         } else {
             //смотрим есть ли нужные списки
-            console.log('lists', data);
             let listsArr = data.result;
 
             if (listsArr.length > 0) {
@@ -47,9 +47,11 @@ function* getLists(action) {
                     // получить метаданные полей
                     const fldsML = yield call(getFields, action.auth, "ML1");
                     const fldsTL = yield call(getFields, action.auth, "TL1");
-                    //полoжить их в state
+
+                    //полoжить их в module bitrixApi и в state
+                    MetaFields.MarshList = fldsML.result
+                    MetaFields.TaskList = fldsTL.result
                     yield put({ type: "LISTSFIELDS_METADATA", marshListFields: fldsML.result, taskListFields: fldsTL.result })
-                    console.log(fldsML, fldsTL)
 
                     //получить все марш.листы, если их несколько, назначить 1-й текущим 
                     //затем получить все задания и отфильтровать их по ID текущего списка
@@ -121,8 +123,6 @@ function* createLists(action) {
                 const fldsTL = yield call(getFields, action.auth, "TL1");
                 //полoжить их в state
                 yield put({ type: "LISTSFIELDS_METADATA", marshListFields: fldsML.result, taskListFields: fldsTL.result })
-                console.log(fldsML, fldsTL)
-
             }
         }
     } catch (error) {
@@ -152,8 +152,9 @@ function* watchAddMarshList(action) {
 
 function* addMarshlist(action) {
     try {
+        yield put({ type: 'SHOW_LOADING', showLoading: true });
         const addedmarsh = yield call(addMarshList, action.auth, action.params); //Обрабатывать ошибки!!!
-        console.log("addedmarsh", addedmarsh)
+
         //Обновляем марш. листы
         const dataML = yield call(getListData, action.auth, "ML1");
         //значения полей PROPERTY_ являлись объектом = приводим из к простым значениям
@@ -163,12 +164,13 @@ function* addMarshlist(action) {
             )
             return d
         })
-        // const dataTL = yield call(getListData, action.auth, "TL1");
 
-        yield put({ type: 'MARSHLIST_DATA_GET', marshListData: convML })
+        yield put({ type: 'MARSHLIST_DATA_GET', marshListData: convML });
+        yield put({ type: 'SHOW_LOADING', showLoading: false });
 
     } catch (error) {
         yield put({ type: "FETCH_FAILED", error })
+        yield put({ type: 'SHOW_LOADING', showLoading: false });
     }
 }
 
@@ -184,12 +186,22 @@ function* deleteTaskListAndUserTask(item, action, metadata) {
 
 function* removeMarshlist(action) {
     try {
-
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
         const state = yield select();
         const metadata = state.taskListFields;
         const tasksByML = state.taskListData.filter(tsk => (tsk[BPropTL(metadata, "Внешний ключ")] === action.id))
+
+        //определим, в какой позиции находился удаляемый марш. лист и выберем объект на одну позицию выше
+        let deletedPos = 0;
+        for (let i = 0; i < state.marshListData.length; i++) {
+            if (state.marshListData[i].ID === action.id) {
+                deletedPos = i
+                break;
+            }
+        }
+        const prevML = deletedPos == 0 ? {} : state.marshListData[deletedPos - 1]// Марш. лист перед удаляумым
+
 
         //Удаляем задания и задачи
         yield all(tasksByML.map(item => call(deleteTaskListAndUserTask, item, action, metadata)));
@@ -206,6 +218,9 @@ function* removeMarshlist(action) {
         const dataTL = yield call(getListData, action.auth, "TL1");
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
+
+        //назначим текущим тот, к-й был перед удаляемым
+        yield put({ type: 'SELECTED_MARSHLIST', selectedMarshList: prevML });
 
         yield put({ type: 'SHOW_LOADING', showLoading: false });
     }
@@ -411,10 +426,9 @@ function* watchAddNewUserTask(action) {
 
 function* add_NewUserTask(action) {
     try {
-
         yield put({ type: 'SHOW_LOADING', showLoading: true });
-        //debugger
-        const state = yield select(); //передать в api
+
+        //?? const state = yield select(); //передать в api
 
         const dataTask = yield call(addNewUserTask, action.auth, action.userTaskParams);
 
@@ -424,7 +438,7 @@ function* add_NewUserTask(action) {
         // ltp.task_ref = "<a href=" + action.auth.domain + "/company/personal/user/1/tasks/task/view/" + dataTask.result.task.id + ">" + "Задача " + dataTask.result.task.id + "</a>";
         ltp.task_status = "-" //новая, нестартовавшая задача
 
-        const dataTaskList = yield call(addTaskInList, action.auth, action.listTaskParams, state)
+        const dataTaskList = yield call(addTaskInList, action.auth, action.listTaskParams)//, state)
 
         const dataTL = yield call(getListData, action.auth, "TL1");
 
@@ -447,8 +461,7 @@ function* watchUpdateTaskList(action) {
 function* updateUserTask(action) {
     try {
         yield put({ type: 'SHOW_LOADING', showLoading: true });
-        const state = yield select(); //передать в api
-
+        // const state = yield select(); //передать в api
         //Сначала удалим Б24-задачу и создадим ее заново  с нулевым статусом
         //Потом обновим запись в Списке 
 
@@ -460,11 +473,10 @@ function* updateUserTask(action) {
         const newdataTask = yield call(addNewUserTask, action.auth, action.userTaskParams);
 
         //с полученными данными новой задачи обновляем запись в Списке 
-        const updateData = yield call(updateTaskListRecord, action.auth, action.listTaskParams, newdataTask.result, state.taskListFields);
-
-        console.log("updateData", updateData);
+        const updateData = yield call(updateTaskListRecord, action.auth, action.listTaskParams, newdataTask.result)//, state.taskListFields);
 
         const dataTL = yield call(getListData, action.auth, "TL1");
+
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
 

@@ -1,5 +1,4 @@
 import { connect } from 'react-redux'
-
 import RouteList from './compRouteList'
 
 const deleteMarshList = (authData, id) => {
@@ -8,10 +7,10 @@ const deleteMarshList = (authData, id) => {
 const getUsers = (authData) => {
     return { type: "START_GET_USERS", auth: authData }
 }
-
 const selectedMarshList = (ml) => {
     return { type: "SELECTED_MARSHLIST", selectedMarshList: ml }
 }
+
 const DtoP = (dispatch) => {
     return {
         deleteMarshList: (a, id) => dispatch(deleteMarshList(a, id)),
@@ -21,7 +20,6 @@ const DtoP = (dispatch) => {
 }
 
 const StoP = (state) => {
-
     return {
         auth: state.auth,
         users: state.users,
