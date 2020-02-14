@@ -1,12 +1,11 @@
 import { all, select, call, put, takeEvery } from 'redux-saga/effects';
 import {
     MetaFields,
-    fetchLists, getFields, getListData, addList, addFields,
-    getUsers, addMarshList,
-    deleteMarshList, updateMarshList,
-    getCompanies, getCompanyFields, addTaskList, getLids,
-    addUserTask, updateTaskListRecord, deleteTaskList,
-    addNewUserTask, addTaskInList, deleteUserTask, startUserTask,
+    fetchLists, getFields, addList, addFields,
+    getUsers, getCompanies, getCompanyFields,
+    getListData, addMarshList, deleteMarshList, updateMarshList,
+    updateTaskListRecord, deleteTaskList,
+    addNewUserTask, addTaskInList, deleteUserTask, startUserTask, updateUserTask,
     updateTaskListRecordFlds
 } from '../bitrixApi'
 
@@ -38,8 +37,7 @@ function* getLists(action) {
             if (listsArr.length > 0) {
                 let marshlist = listsArr.filter(list => list.NAME === "MarshList")[0];
                 let tasklist = listsArr.filter(list => list.NAME === "TaskList")[0];
-                console.log("marshlist tasklist", marshlist, tasklist);
-                //debugger
+
                 if (marshlist && tasklist) {
                     //списки есть - кладем в state
                     yield put({ type: "LISTS_METADATA", marshList: marshlist, taskList: tasklist })
@@ -94,7 +92,6 @@ function* watchCreateLists() {
 
 function* createLists(action) {
     try {
-        console.log("createLists action", action)// iblockCode,nameList
         const dataML = yield call(addList, action.auth, "ML1", "MarshList");
         const dataTL = yield call(addList, action.auth, "TL1", "TaskList");
 
@@ -139,7 +136,6 @@ function* watchGetUsers(action) {
 function* fetchUsers(action) {
     try {
         const users = yield call(getUsers, action.auth);
-        console.log("USERS", users)
         yield put({ type: "GET_USERS", users: users.result })
     } catch (error) {
         yield put({ type: "FETCH_FAILED", error })
@@ -208,7 +204,6 @@ function* removeMarshlist(action) {
 
         const delData = yield call(deleteMarshList, action.auth, action.id); //ERRORS!!
         //Решить, на какую позицию должен переместиться курсор
-        //console.log(delData);
 
         const dataML = yield call(getListData, action.auth, "ML1");
 
@@ -265,7 +260,6 @@ function* GetCompanies(action) {
         yield put({ type: 'COMPANY_FIELDS', companyFields: flds.result })
 
         const compData = yield call(getCompanies, action.auth);//Получаем компании через List-method рекурсивно
-        console.log("Company+Meta ", flds.result, compData);
 
         //уберем тех, у кого нет адреса
         let B24adr = null; //имя поля  в Б24
@@ -289,85 +283,12 @@ function* GetCompanies(action) {
         yield put({ type: "FETCH_FAILED", err })
     }
 }
-//Добавляет задание в список
-function* watchAddTaskList(action) {
-    yield takeEvery("ADD_TASKLIST", AddTaskList)
-}
-function* AddTaskList(action) {
-    try {
-        //addTaskList
-        const addedtasklist = yield call(addTaskList, action.auth, action.params); //DO ERRORS!!!
-        const dataTL = yield call(getListData, action.auth, "TL1");
-        // debugger
-        //Снова получим весь список заданий но было б лучше просто добавить сохраненный объект в массив 
-        let convTL = objValToVal(dataTL.result)
-        yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
-
-    } catch (err) {
-        yield put({ type: "FETCH_FAILED", error })
-    }
-}
-
-//добавляет Б24-задачу --убрать
-function* watchAddTask(action) {
-    yield takeEvery("ADD_TASK", AddTask)
-}
 
 const BPropTL = (metadata, title) => {
     for (let fld of Object.keys(metadata)) {
         if (metadata[fld].NAME === title) return fld
     }
 }
-
-
-function* Mytest(item, action) {//Убрать
-    try {
-        console.log(item, action)
-        const state = yield select();
-
-        const usertask = yield call(addUserTask,
-            action.auth,
-            item[BPropTL(state.taskListFields, "ID Исполнителя")],
-            item[BPropTL(state.taskListFields, "Адрес")],
-            item[BPropTL(state.taskListFields, "Задание")],
-            item[BPropTL(state.taskListFields, "Гис")],
-            item[BPropTL(state.taskListFields, "ID Компании")])
-
-        //debugger
-        //Последнее свойство - это Id Б24 задачи
-        item[Object.keys(item)[Object.keys(item).length - 1]] = usertask.result.task.id
-
-        // //праметры для обновления записи задания
-        let pars = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&fields[NAME]=" + item.NAME + "&ELEMENT_ID=" + item.ID
-        let flds = Object.keys(item)
-        for (let i = 0; i < flds.length; i++) {
-            if (flds[i].includes("PROPERTY_")) {
-                pars += "&fields[" + flds[i] + "]=" + item[flds[i]]
-            }
-        }
-        const updatetaskrec = yield call(updateTaskListRecord, action.auth, pars);
-        console.log("updatedTaskRec", updatetaskrec)
-
-
-    } catch (err) {
-        yield put({ type: "FETCH_FAILED", err })
-    }
-
-}
-
-function* AddTask(action) { //УБРАТЬ!!
-    try {
-        yield all(action.taskRecords.map(item => call(Mytest, item, action)));
-
-        const dataTL = yield call(getListData, action.auth, "TL1");
-        let convTL = objValToVal(dataTL.result)
-        yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
-
-    } catch (err) {
-        console.log(err)
-    }
-}
-
 
 function* watchDeleteTaskList(action) {
     yield takeEvery("DELETE_TASKLIST", removeTasklist)
@@ -379,14 +300,12 @@ function* removeTasklist(action) {
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
         const delData = yield call(deleteTaskList, action.auth, action.taskListRecord.ID);  //    action.id); //ERRORS!!
-        console.log(delData);
 
         //Удалить Б24-задачу
         let state = yield select();
         const delTskdata = yield call(deleteUserTask,
             action.auth,
             action.taskListRecord[BPropTL(state.taskListFields, "ID Задачи")]);
-        console.log("delTskdata", delTskdata);
 
         //Обновление
         const dataTL = yield call(getListData, action.auth, "TL1");
@@ -401,22 +320,6 @@ function* removeTasklist(action) {
     }
 }
 
-///////////////////
-function* watchGetLids(action) {
-    yield takeEvery("GET_LIDS", GetLids)
-}
-function* GetLids(action) {
-    try {
-        let lids = yield call(getLids, action.auth);
-        console.log("LIDS", lids)
-        debugger
-    }
-    catch (err) {
-        debugger
-        yield put({ type: "FETCH_FAILED", err })
-    }
-}
-/////////////////////
 
 
 //////////---new---/////////
@@ -435,7 +338,7 @@ function* add_NewUserTask(action) {
         let ltp = action.listTaskParams;
 
         ltp.task_id = dataTask.result.task.id
-        // ltp.task_ref = "<a href=" + action.auth.domain + "/company/personal/user/1/tasks/task/view/" + dataTask.result.task.id + ">" + "Задача " + dataTask.result.task.id + "</a>";
+
         ltp.task_status = "-" //новая, нестартовавшая задача
 
         const dataTaskList = yield call(addTaskInList, action.auth, action.listTaskParams)//, state)
@@ -449,37 +352,40 @@ function* add_NewUserTask(action) {
         yield put({ type: 'SHOW_LOADING', showLoading: false });
     }
     catch (error) {
+        alert("Ошибка" + error.message)
+        console.log("error", error)
         yield put({ type: "FETCH_FAILED", error })
     }
 }
 
 //Обновление задания и Б24-задачи
 function* watchUpdateTaskList(action) {
-    yield takeEvery("UPDATE_USERTASK", updateUserTask)
+    yield takeEvery("UPDATE_USERTASK", update_UserTask)
 }
 
-function* updateUserTask(action) {
+function* update_UserTask(action) {
     try {
         yield put({ type: 'SHOW_LOADING', showLoading: true });
-        // const state = yield select(); //передать в api
-        //Сначала удалим Б24-задачу и создадим ее заново  с нулевым статусом
-        //Потом обновим запись в Списке 
 
-        //Удаляем задачу
-        let oldTaskId = action.listTaskParams.task_id;
-        const delTaskData = yield call(deleteUserTask, action.auth, oldTaskId);
+        //Обновляем Б24-задачу
+        ///---> updateUserTask(auth, task_id, resp_id, title, task, gis, company_id)
+        const updated_UserTask = yield call(updateUserTask,
+            action.auth,
+            action.listTaskParams.task_id,
+            action.listTaskParams.responsible_id,
+            action.listTaskParams.address,
+            action.listTaskParams.task,
+            action.listTaskParams.gis,
+            action.listTaskParams.company_id
+        )
 
-        //СОздаем заново
-        const newdataTask = yield call(addNewUserTask, action.auth, action.userTaskParams);
-
-        //с полученными данными новой задачи обновляем запись в Списке 
-        const updateData = yield call(updateTaskListRecord, action.auth, action.listTaskParams, newdataTask.result)//, state.taskListFields);
+        // обновляем запись в Списке 
+        const updated_ListTask = yield call(updateTaskListRecord, action.auth, action.listTaskParams, action.listTaskParams.task_id)//      newdataTask.result)//, state.taskListFields);
 
         const dataTL = yield call(getListData, action.auth, "TL1");
 
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
-
         yield put({ type: 'SHOW_LOADING', showLoading: false });
     }
     catch (error) {
@@ -512,11 +418,9 @@ function* Starting_Task(action) {
 
 function* StartTask(item, action) {
     try {
-        console.log(item, action)
         const state = yield select();
 
         const userTask = yield call(startUserTask, action.auth, item[BPropTL(state.taskListFields, "ID Задачи")])
-        console.log("Starting", userTask)
 
         //Последнее свойство - это Status Б24 задачи
         item[Object.keys(item)[Object.keys(item).length - 1]] = 'выполняется'
@@ -536,22 +440,6 @@ function* StartTask(item, action) {
 
 ///-----------
 
-
-/*
-//Удаление Б24-задачи
-function* watchDeleteUserTask(action) {
-    yield takeEvery("DELETE_USERTASK", delete_UserTask)
-}
-
-function* delete_UserTask(action) {
-    try {
-       const dataTask = yield call(deleteUserTask, action.auth, action.taskId);
-       console.log(dataTask);
-    }catch(error){
-        console.log(error)
-    }
-*/
-
 export default function* rootSaga() {
     yield all([
         watchGetLists(),
@@ -561,13 +449,105 @@ export default function* rootSaga() {
         watchDeleteMarshList(),
         watchUpdateMarshList(),
         watchGetCompanies(),
-        watchAddTaskList(),
+        // watchAddTaskList(),
         //   watchAddTask(),
         watchDeleteTaskList(),
         watchUpdateTaskList(),
         watchAddNewUserTask(),
         watchStartingTask(),
 
-        watchGetLids()
+        //  watchGetLids()
     ])
 }
+
+///////////////////
+/*
+function* watchGetLids(action) {
+    yield takeEvery("GET_LIDS", GetLids)
+}
+function* GetLids(action) {
+    try {
+        let lids = yield call(getLids, action.auth);
+        debugger
+    }
+    catch (err) {
+        debugger
+        yield put({ type: "FETCH_FAILED", err })
+    }
+}
+*/
+/////////////////////
+
+
+
+/*
+function* Mytest(item, action) {//Убрать
+    try {
+        const state = yield select();
+
+        const usertask = yield call(addUserTask,
+            action.auth,
+            item[BPropTL(state.taskListFields, "ID Исполнителя")],
+            item[BPropTL(state.taskListFields, "Адрес")],
+            item[BPropTL(state.taskListFields, "Задание")],
+            item[BPropTL(state.taskListFields, "Гис")],
+            item[BPropTL(state.taskListFields, "ID Компании")])
+
+        //debugger
+        //Последнее свойство - это Id Б24 задачи
+        item[Object.keys(item)[Object.keys(item).length - 1]] = usertask.result.task.id
+
+        // //праметры для обновления записи задания
+        let pars = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=TL1&fields[NAME]=" + item.NAME + "&ELEMENT_ID=" + item.ID
+        let flds = Object.keys(item)
+        for (let i = 0; i < flds.length; i++) {
+            if (flds[i].includes("PROPERTY_")) {
+                pars += "&fields[" + flds[i] + "]=" + item[flds[i]]
+            }
+        }
+        const updatetaskrec = yield call(updateTaskListRecord, action.auth, pars);
+    } catch (err) {
+        yield put({ type: "FETCH_FAILED", err })
+    }
+
+}
+*/
+// function* AddTask(action) { //УБРАТЬ!!
+//     try {
+//         yield all(action.taskRecords.map(item => call(Mytest, item, action)));
+
+//         const dataTL = yield call(getListData, action.auth, "TL1");
+//         let convTL = objValToVal(dataTL.result)
+//         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
+
+//     } catch (err) {
+//         console.log(err)
+//     }
+// }
+
+
+/*
+//Добавляет задание в список
+function* watchAddTaskList(action) {
+    yield takeEvery("ADD_TASKLIST", AddTaskList)
+}
+function* AddTaskList(action) {
+    try {
+        const addedtasklist = yield call(addTaskList, action.auth, action.params); //DO ERRORS!!!
+        const dataTL = yield call(getListData, action.auth, "TL1");
+        // debugger
+        //Снова получим весь список заданий но было б лучше просто добавить сохраненный объект в массив
+        let convTL = objValToVal(dataTL.result)
+        yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
+
+    } catch (err) {
+        yield put({ type: "FETCH_FAILED", error })
+    }
+}
+*/
+
+
+//добавляет Б24-задачу --убрать
+// function* watchAddTask(action) {
+//     yield takeEvery("ADD_TASK", AddTask)
+// }

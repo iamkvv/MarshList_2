@@ -76,7 +76,6 @@ class Yandex_Routes extends Component {
             }
         }
 
-        //console.log("arrRoute", RouteAddrs)
         let self = this;
         this.ymapi.route(
             RouteAddrs
@@ -123,24 +122,6 @@ class Yandex_Routes extends Component {
             //(elementid,iblockid, name, user_id, fio, date, comment,path)
 
             self.setState({ distanse: Math.round(meters / 1000) })
-
-            /*
-            //Обновить расстояние марш.листа
-            const { selectedMarshList, marshListFields } = self.props;
-
-            let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=ML1&ELEMENT_ID=" + selectedMarshList.ID + "&" +
-                "fields[" + self.BProp(marshListFields, "Название") + "]" + "=МЛ" + "&" +
-                "fields[" + self.BProp(marshListFields, "Исполнитель") + "]" + "=" + selectedMarshList[self.BProp(marshListFields, "Исполнитель")] + "&" +
-                "fields[" + self.BProp(marshListFields, "ID Исполнителя") + "]" + "=" + selectedMarshList[self.BProp(marshListFields, "ID Исполнителя")] + "&" +
-                "fields[" + self.BProp(marshListFields, "Дата") + "]" + "=" + selectedMarshList[self.BProp(marshListFields, "Дата")] + "&" +
-                "fields[" + self.BProp(marshListFields, "Комментарий") + "]" + "=" + selectedMarshList[self.BProp(marshListFields, "Комментарий")] + "&" +
-                "fields[" + self.BProp(marshListFields, "Расстояние") + "]" + "=" + Math.round(meters / 1000) //+ " км"
-
-            self.props.updateMarshList(self.props.auth, params);
-
-            message.info(`Длина маршрута : ${Math.round(meters / 1000)} км`);
-            //???  self.props.manageYandexRoute_Visible();
-            */
         })
     }
 
@@ -164,7 +145,6 @@ class Yandex_Routes extends Component {
     onClickCalc = () => {
         this.createRoute();
     }
-
 
     onCancel = () => {
         this.props.manageYandexRoute_Visible();
@@ -200,7 +180,6 @@ class Yandex_Routes extends Component {
 
     render() {
         return (
-
             <Modal
                 visible={this.props.visible}
                 style={{ top: 20 }}
@@ -223,10 +202,6 @@ class Yandex_Routes extends Component {
                 }}>
                     <div id="ymap" style={{ width: 605, heigth: 605, margin: '-5px auto' }}>
 
-                        {/**   <div >
-                            <Button onClick={this.createRoute}>Построить маршрут</Button>
-                        </div>
-                         */}
                         <Map defaultState={{
                             center: [55.15886, 61.40255],
                             zoom: 13

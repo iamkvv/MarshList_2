@@ -17,12 +17,9 @@ const checkLists = (authData) => {
     return { type: "CHECK_LISTS", auth: authData }
 }
 
-
 const createLists = (authData) => {
     return { type: "CREATING_LISTS", creatingLists: true, auth: authData }
 }
-
-
 
 /////////////////
 const sagaMiddleware = createSagaMiddleware();
@@ -33,10 +30,9 @@ const store = createStore(reducerApp,
 sagaMiddleware.run(rootSaga);
 
 //
-function select(state) {
-    return state.marshList
-}
-
+// function select(state) {
+//     return state.marshList
+// }
 // let currentValue
 // function handleChange() {
 //     let previousValue = currentValue
@@ -59,16 +55,6 @@ let st = store.getState()
 store.dispatch(checkLists(st.auth))
 //
 
-// const DtoP = (dispatch) => {
-//     return {
-//         checkAuth: () => dispatch(checkAuth()),
-//         checkLists: (a) => dispatch(checkLists(a)),
-//         createLists: (a) => dispatch(createLists(a)),
-//         //   refresh: () => dispatch(refreshToken()),
-//         //   testSaga: (k) => dispatch(testSAGA(k))
-//     }
-// }
-
 // const refresh = () => {
 //     setInterval(() => {
 //         console.log('REFRESH')
@@ -82,14 +68,12 @@ const StoP = (state) => (
     //{ listsError: state.listsError } //потом только серьезные ошибки
 )
 
-
 const ConnectedApp = connect(StoP, null)(App)
 
 const ConnApp = () => (
-    //return (
     <Provider store={store}>
         <ConnectedApp />
-    </Provider>)
-//}
+    </Provider>
+)
 
 export default ConnApp

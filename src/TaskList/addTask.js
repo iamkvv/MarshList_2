@@ -72,8 +72,6 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
                 if (!err) {
                     let company = this.props.companies.filter(comp => comp.ID === values.company)[0];
 
-                    console.log('Company', company);
-
                     //Сначала добавляем задачу и получаем ее статус и ID 
                     //С этими данными содаем задание в списке
 
@@ -118,9 +116,6 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
 
         render() {
             const { visible, companies, onCancel, onCreate, form } = this.props;
-
-            console.log("Modal Add Task props", this.props)
-
             const Companies = companies.map((comp) =>
                 (<Option key={comp.ID}>{`${comp.TITLE}`}</Option>)
             );
@@ -147,7 +142,6 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
                                 )}
                             </Form.Item>
 
-
                             <Form.Item label="Задание">
                                 {getFieldDecorator('task')(<TextArea rows={2} />)}
                             </Form.Item>
@@ -160,6 +154,5 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
 )
 
 const AddTask = connect(StoP, DtoP)(Add_Task)
-
 export default AddTask;
 

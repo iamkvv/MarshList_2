@@ -151,7 +151,7 @@ export function getCompanies(auth) {     // fields) {
     // let uraddr = BProp("Юридический адрес", fields);//юр. адрес
 
     let addr = "rest/crm.company.list";
-    let params = `&select[]=ID&select[]=TITLE&select[]=PHONE&select[]=UF_*`;  //   select[]=PHONE&select[]=UF_*` //${fld2gis}&select[]=${uraddr}`
+    let params = `&order[TITLE]=ASC&select[]=ID&select[]=TITLE&select[]=PHONE&select[]=UF_*`;  //   select[]=PHONE&select[]=UF_*` //${fld2gis}&select[]=${uraddr}`
     // debugger
     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
 
@@ -181,17 +181,17 @@ export function addTaskList(auth, params) {
         .then(response => response.json())
 }
 
-//Добавить Б24-задачу
-export function addUserTask(auth, resp_id, title, task, gis, company_id) {
-    let addr = "rest/tasks.task.add";
+
+//Обновить Б24-задачу
+export function updateUserTask(auth, task_id, resp_id, title, task, gis, company_id) {
+    let addr = "rest/tasks.task.update";
     let content = task + "<br>" + "Открыть 2GIS: " + gis;
     let company = 'fields[UF_CRM_TASK][0]=CO_' + company_id;
-    let params = `&fields[RESPONSIBLE_ID]=${resp_id}&fields[TITLE]=${title}&fields[DESCRIPTION]=${content}&${company}`
+    let params = `&taskId=${task_id}&fields[RESPONSIBLE_ID]=${resp_id}&fields[TITLE]=${title}&fields[DESCRIPTION]=${content}&${company}`
     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
     return fetch(request, Get)
         .then(response => response.json());
 }
-
 
 
 
@@ -204,13 +204,6 @@ export function deleteTaskList(auth, elementid) {
         .then(response => response.json());
 }
 
-//??Обновление задания в списке
-// export function updateTaskList(auth, params) {
-//     let addr = "rest/lists.element.update"
-//     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
-//     return fetch(request, Post)
-//         .then(response => response.json())
-// }
 
 
 ///
@@ -302,7 +295,7 @@ export function updateTaskListRecord(auth, params, newdataTask) {// , metadata) 
         "fields[" + BProp("Гис", metadata) + "]" + "=" + params.gis + "&" +
         "fields[" + BProp("Телефон", metadata) + "]" + "=" + params.phone + "&" +
         "fields[" + BProp("Задание", metadata) + "]" + "=" + params.task + "&" +
-        "fields[" + BProp("ID Задачи", metadata) + "]" + "=" + newdataTask.task.id + "&" +
+        "fields[" + BProp("ID Задачи", metadata) + "]" + "=" + newdataTask + "&" +  //.task.id + "&" +
         "fields[" + BProp("Статус", metadata) + "]" + "=" + "-"
     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${fldParams}`
     return fetch(request, Post)
@@ -326,3 +319,23 @@ export function updateTaskListRecordFlds(auth, params) {
     return fetch(request, Post)
         .then(response => response.json())
 }
+
+
+//??Обновление задания в списке
+// export function updateTaskList(auth, params) {
+//     let addr = "rest/lists.element.update"
+//     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
+//     return fetch(request, Post)
+//         .then(response => response.json())
+// }
+
+//Добавить Б24-задачу
+// export function addUserTask(auth, resp_id, title, task, gis, company_id) {
+//     let addr = "rest/tasks.task.add";
+//     let content = task + "<br>" + "Открыть 2GIS: " + gis;
+//     let company = 'fields[UF_CRM_TASK][0]=CO_' + company_id;
+//     let params = `&fields[RESPONSIBLE_ID]=${resp_id}&fields[TITLE]=${title}&fields[DESCRIPTION]=${content}&${company}`
+//     let request = `https://${auth.domain}/${addr}?auth=${auth.token}${params}`
+//     return fetch(request, Get)
+//         .then(response => response.json());
+// }

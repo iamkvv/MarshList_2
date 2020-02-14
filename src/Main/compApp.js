@@ -5,30 +5,16 @@ import { ConfigProvider } from 'antd';
 import ruRU from 'antd/lib/locale-provider/ru_RU';
 import Measure from 'react-measure'
 
-
 import ListsNotFound_Create from '../ListsNotFound/contListsNotFound'
 import RouteList_CRUD from '../RouteList/contRouteList'
 import TaskList from '../TaskList/taskList'
 import BlockLoading from './blockLoading'
 
-//import Test from './test'
-//import ReactDOMServer from 'react-dom/server'
-
 //
 //По Yandex -- https://yandex.ru/dev/yandex-apps-launch/maps/doc/concepts/yandexmaps-web-docpage/#yandexmaps-web__search
 //Это может сработать для маршрута  -- https://yandex.ru/maps/?whatshere[point]=61.3991244,55.1633244&whatshere[zoom]=17
 
-
-//class MainApp extends Component {
-
 const MainApp = (props) => {
-
-    // // render() {
-    // const { listsError, marshList, taskList, creatingLists, createLists } = props// this.props;
-    // const showListsError = () => (
-    //     listsError && <p>При обращении к Универсальным Спискам произошла ошибка: {listsError}</p>
-    // );
-
     return (
         <ConfigProvider locale={ruRU}>
             <div className="App">
@@ -53,16 +39,9 @@ const MainApp = (props) => {
         </ConfigProvider>
     )
 }
-//}
-
 
 class App extends Component {
-    // state = {
-    //     dimensions: {
-    //         width: -1,
-    //         height: -1,
-    //     },
-    // }
+    //https://github.com/souporserious/react-measure
     render() {
         return (
             <Measure
@@ -71,8 +50,8 @@ class App extends Component {
                     if (window.BX24) {
                         console.log('FRAME', BX24.getScrollSize());
                         // BX24.resizeWindow(contentRect.width, contentRect.height + 10)
-                        //ОК!!  BX24.fitWindow()
-                        BX24.resizeWindow(contentRect.width, contentRect.height + 50)
+                        BX24.fitWindow()
+                        // BX24.resizeWindow(contentRect.width, BX24.getScrollSize().scrollHeight + 50)// contentRect.height + 50)
                     }
                     console.log("Measure!! ", contentRect)
                 }}
@@ -88,7 +67,5 @@ class App extends Component {
         )
     }
 }
-
-
 
 export default App

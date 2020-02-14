@@ -94,7 +94,6 @@ class RouteList extends Component {
 
     onPageChange = (page) => {
         this.props.selectMarshList(this.props.marshListData[(page - 1) * 5])
-        //debugger
         this.setState({ currentPage: page, selectedRowIndex: 0 })
     }
 
@@ -122,7 +121,6 @@ class RouteList extends Component {
 
                         <Table style={{ backgroundColor: "#fdfdfd" }}
                             rowClassName={(record, index) => {
-                                // console.log("rowClassName--", record, index)
                                 if (index == this.state.selectedRowIndex) return "selected-routelist"
                             }}
                             pagination={{ pageSize: 5, onChange: this.onPageChange }}

@@ -122,7 +122,7 @@ class Task_List extends Component {
     }
 
     manageAddTask_Visible = () => {
-        if (!this.props.selectedMarshList) {
+        if (!this.props.selectedMarshList || !Object.keys(this.props.selectedMarshList).length) {
             this.warning("Не выбран маршрутный лист.")
             return
         }
@@ -206,7 +206,6 @@ class Task_List extends Component {
     }
 
     render() {
-        console.log("Все Свойства Заданий", this.props)
         return (
             <div>
                 <AddTask visible={this.state.addTaskformVisible}
@@ -270,10 +269,8 @@ class Task_List extends Component {
                                 }
 
                                 if (event.target.text === 'Изменить') {
-                                    console.log(this.props, record, rowIndex);
                                     this.manageUpdateTask_Visible();
                                 }
-
                             }
                         }
                     }

@@ -67,10 +67,8 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
 
             this.props.form.validateFields((err, values) => {
                 if (!err) {
-
                     let userObj = this.props.users.filter(usr => usr.ID === values.user)[0];
                     let formvals = Object.assign({}, { user: userObj, comment: values.comment, date: values.date.format("DD.MM.YYYY") })
-                    console.log("FORMVALS", formvals);
 
                     let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=ML1&" + "fields[" + this.BProp("Название") + "]" + "=МЛ" + "&" +
                         "fields[" + this.BProp("Исполнитель") + "]" + "=" + formvals.user.LAST_NAME + " " + formvals.user.NAME + "&" +
@@ -86,9 +84,6 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
                         self.setState({ visible: false });
                         self.props.form.resetFields()
                     }, 500)
-
-
-                    //this.props.onCreate(formvals, this.props.form);
                 } else {
                     console.log('ERR', err, values);
                 }
@@ -98,7 +93,7 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
         render() {
             const { users, onCancel, onCreate, form } = this.props;
             const { visible } = this.state;
-            console.log("Modal props", this.props)
+
             // ///???? value
             const Users = users.map((user) =>
                 (<Option key={user.ID}>{`${user.LAST_NAME} ${user.NAME}`}</Option>)
