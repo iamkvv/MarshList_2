@@ -3,7 +3,7 @@ const checkAuth = () => { //вынести в Helper
     if (!window.BX24) {
         conf = {
             auth: {
-                token: '8a36465e004416ca0031392000000001201c038822051dd7df37676beceb2bc3582adb',
+                token: "3941625e0043ea4c0031392000000001201c035ecb1a521dc7f466e43a999bbdf31723",
                 expires_in: new Date().valueOf(),
                 refresh_token: "123456",
                 domain: "anywhere.bitrix24.ru"
@@ -11,8 +11,9 @@ const checkAuth = () => { //вынести в Helper
         }
     }
     else {
+        BX24.refreshAuth();
         let a = BX24.getAuth();
-        // BX24.resizeWindow(860, 1100)
+
         conf = {
             auth: {
                 domain: a.domain,
@@ -93,15 +94,6 @@ const reducerApp = (state = iniState, action) => {
 
         case "SHOW_LOADING":
             return Object.assign({}, state, { showLoading: action.showLoading });
-
-
-        // case "ADD_MARSHLIST": //потом использовать для progress
-        //     debugger
-        //     return state;
-
-
-        // case "CREATING_LISTS":
-        //     return Object.assign({}, state, { creatingLists: action.creatingLists })
 
         default:
             return state;

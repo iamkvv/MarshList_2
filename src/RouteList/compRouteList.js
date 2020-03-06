@@ -17,7 +17,7 @@ class RouteList extends Component {
     }
 
     deleteMarshList = () => {
-        this.props.deleteMarshList(this.props.auth, this.props.selectedMarshList.ID);
+        this.props.deleteMarshList(this.props.selectedMarshList.ID);//  this.props.auth, this.props.selectedMarshList.ID);
         setTimeout(() => {
             this.setState({ showDeleteModal: false })//, selectedRowIndex: 0 })
         }, 300)
@@ -99,7 +99,6 @@ class RouteList extends Component {
 
     render() {
         const { marshListData } = this.props;
-
         return (
             <div>
                 {this.props.marshListData ?

@@ -12,7 +12,7 @@ class ListsNotFound extends Component {
         }
     }
     render() {
-        console.log("innerProps", this.props)
+
         return (
             <div>
                 {

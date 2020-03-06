@@ -1,21 +1,23 @@
 import { connect } from 'react-redux'
 import RouteList from './compRouteList'
 
-const deleteMarshList = (authData, id) => {
-    return { type: "DELETE_MARSHLIST", auth: authData, id: id }
+const deleteMarshList = (id) => { // (authData, id) => {
+    return { type: "DELETE_MARSHLIST", id: id }// auth: authData, id: id }
 }
-const getUsers = (authData) => {
-    return { type: "START_GET_USERS", auth: authData }
+
+const getUsers = () => {
+    return { type: "START_GET_USERS" }
 }
+
 const selectedMarshList = (ml) => {
     return { type: "SELECTED_MARSHLIST", selectedMarshList: ml }
 }
 
 const DtoP = (dispatch) => {
     return {
-        deleteMarshList: (a, id) => dispatch(deleteMarshList(a, id)),
+        deleteMarshList: (id) => dispatch(deleteMarshList(id)),//  a, id)),
         selectMarshList: (ml) => dispatch(selectedMarshList(ml)),
-        getUsers: (a) => dispatch(getUsers(a))
+        getUsers: () => dispatch(getUsers())
     }
 }
 

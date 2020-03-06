@@ -5,28 +5,19 @@ import { connect } from 'react-redux'
 const { Option } = Select;
 const { TextArea } = Input;
 
-// const getUsers = (authData) => {
-//     return { type: "START_GET_USERS", auth: authData }
-// }
-// const updateTaskList = (authData, params) => {
-//     return { type: "UPDATE_TASKLIST", auth: authData, params: params }
-// }
-
-
-const updateUserTask = (authData, ut_params, lt_params) => {
-    return { type: "UPDATE_USERTASK", auth: authData, userTaskParams: ut_params, listTaskParams: lt_params }
+const updateUserTask = (ut_params, lt_params) => {
+    return { type: "UPDATE_USERTASK", userTaskParams: ut_params, listTaskParams: lt_params }
 }
 
 const DtoP = (dispatch) => {
     return {
-        //updateTaskList: (a, p) => dispatch(updateTaskList(a, p)),
-        updateUserTask: (a, utpars, ltpars) => dispatch(updateUserTask(a, utpars, ltpars))
+        updateUserTask: (utpars, ltpars) => dispatch(updateUserTask(utpars, ltpars))
     }
 }
 
 const StoP = (state) => {
     return {
-        auth: state.auth,
+        //auth: state.auth,
         //??marshListFields: state.marshListFields, //метаданные полей MarshList
         taskListFields: state.taskListFields,
         marshListFields: state.marshListFields, //метаданные полей MarshList
@@ -41,22 +32,17 @@ const StoP = (state) => {
 const Update_Task = Form.create({ name: 'changeTask_modal' })(
 
     class extends React.Component {
-        //  state = { visible: false }
 
         onCancel = () => {
             this.props.manageUpdateTask_Visible()
             this.props.form.resetFields()
         }
 
-
-
         BProp = (title) => {
             for (let fld of Object.keys(this.props.marshListFields)) {
                 if (this.props.marshListFields[fld].NAME === title) return fld
             }
         }
-
-
 
         BPropTL = (title) => {
             for (let fld of Object.keys(this.props.taskListFields)) {
@@ -102,7 +88,7 @@ const Update_Task = Form.create({ name: 'changeTask_modal' })(
                         task_status: this.props.selectedTaskList[this.BPropTL("Статус")]
                     }
 
-                    this.props.updateUserTask(this.props.auth, UserTaskParams, TaskListParams)
+                    this.props.updateUserTask(UserTaskParams, TaskListParams)
 
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {
@@ -125,7 +111,7 @@ const Update_Task = Form.create({ name: 'changeTask_modal' })(
         }
 
         render() {
-            const { visible, companies, onCancel, onCreate, form } = this.props;
+            const { visible, companies, form } = this.props;
             const Companies = companies.map((comp) =>
                 (<Option key={comp.ID}>{`${comp.TITLE}`}</Option>)
             );

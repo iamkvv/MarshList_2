@@ -13,13 +13,13 @@ import rootSaga from './sagas'
 const checkAuth = () => {
     return { type: "CHECK_AUTH" }
 }
-const checkLists = (authData) => {
-    return { type: "CHECK_LISTS", auth: authData }
+const checkLists = () => {// (authData) => {
+    return { type: "CHECK_LISTS" }//, auth: authData }
 }
 
-const createLists = (authData) => {
-    return { type: "CREATING_LISTS", creatingLists: true, auth: authData }
-}
+// const createLists = (authData) => {
+//     return { type: "CREATING_LISTS", creatingLists: true, auth: authData }
+// }
 
 /////////////////
 const sagaMiddleware = createSagaMiddleware();
@@ -51,17 +51,17 @@ sagaMiddleware.run(rootSaga);
 
 ////////////////
 store.dispatch(checkAuth())
-let st = store.getState()
-store.dispatch(checkLists(st.auth))
+//??let st = store.getState()
+store.dispatch(checkLists());//М.Б. нужен timeout   ??st.auth))
 //
 
-// const refresh = () => {
-//     setInterval(() => {
-//         console.log('REFRESH')
-//         store.dispatch(checkAuth())
-//     }, 1000 * 60)
-// }
-// refresh();
+const refresh = () => {
+    setInterval(() => {
+        console.log('REFRESH')
+        store.dispatch(checkAuth())
+    }, 1000 * 60 * 30)
+}
+refresh();
 
 const StoP = (state) => (
     state //пока для контроля св-в возвратим весь стейт

@@ -16,6 +16,7 @@ class PrintMarshList extends Component {
                                 <th>№</th>
                                 <th>Компания</th>
                                 <th>Адрес</th>
+                                <th>Телефон</th>
                                 <th>Задание</th>
                             </tr>
                             {this.props.data.map(tsk => (
@@ -23,6 +24,7 @@ class PrintMarshList extends Component {
                                     <td>{tsk.num}</td>
                                     <td>{tsk.company}</td>
                                     <td>{tsk.address.split('|')[0]}</td>
+                                    <td>{tsk.tel}</td>
                                     <td dangerouslySetInnerHTML={{ __html: tsk.task }}></td>
                                 </tr>))
                             }

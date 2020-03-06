@@ -11,7 +11,6 @@ import {
 
 
 function objValToVal(arr) {//значения полей PROPERTY_ являлись объектом = приводим из к простым значениям
-
     return arr.map(d => {
         Object.keys(d).forEach(p =>
             p.includes('PROPERTY_') ? d[p] = d[p][Object.keys(d[p])[0]] : d[p] = d[p]
@@ -25,9 +24,11 @@ function* watchGetLists() {
     yield takeEvery("CHECK_LISTS", getLists)
 }
 
-function* getLists(action) {
+function* getLists() {//action) {
     try {
-        const data = yield call(fetchLists, action.auth);
+        const state = yield select();
+        const data = yield call(fetchLists, state.auth);//  action.auth);
+
         if (data.error) {
             yield put({ type: "LISTS_ERROR", description: data.error_description });
         } else {
@@ -43,8 +44,10 @@ function* getLists(action) {
                     yield put({ type: "LISTS_METADATA", marshList: marshlist, taskList: tasklist })
 
                     // получить метаданные полей
-                    const fldsML = yield call(getFields, action.auth, "ML1");
-                    const fldsTL = yield call(getFields, action.auth, "TL1");
+                    const fldsML = yield call(getFields, state.auth, "ML1");    //action.auth, "ML1");
+                    const fldsTL = yield call(getFields, state.auth, "TL1")   // action.auth, "TL1");
+
+                    //!! Нужно сразу создать Объект (или MAP) типа {"ID Компании":"PROPERTY_526"}. ЭТо сократит кол-во кода
 
                     //полoжить их в module bitrixApi и в state
                     MetaFields.MarshList = fldsML.result
@@ -53,8 +56,8 @@ function* getLists(action) {
 
                     //получить все марш.листы, если их несколько, назначить 1-й текущим 
                     //затем получить все задания и отфильтровать их по ID текущего списка
-                    const dataML = yield call(getListData, action.auth, "ML1");
-                    const dataTL = yield call(getListData, action.auth, "TL1");
+                    const dataML = yield call(getListData, state.auth, "ML1") //action.auth, "ML1");
+                    const dataTL = yield call(getListData, state.auth, "TL1")//action.auth, "TL1");
 
                     if (dataML.result.length > 0) {
                         let convML = objValToVal(dataML.result)
@@ -77,7 +80,7 @@ function* getLists(action) {
             } else {//вообще нет списков
                 yield put({ type: "NOTFOUND_LISTS" })//в рез-те user должен получить предлжение создать списки
 
-            }//если списков нет тоже строить
+            }
         }
     } catch (error) {
         yield put({ type: "FETCH_FAILED", error })
@@ -128,31 +131,35 @@ function* createLists(action) {
 }
 
 
-
-function* watchGetUsers(action) {
+//Пользователи Б24 для создания МЛ
+function* watchGetUsers() {//action) {
     yield takeEvery("START_GET_USERS", fetchUsers)
 }
 
-function* fetchUsers(action) {
+function* fetchUsers() {
     try {
-        const users = yield call(getUsers, action.auth);
+        const state = yield select();
+        const users = yield call(getUsers, state.auth);// action.auth);
         yield put({ type: "GET_USERS", users: users.result })
     } catch (error) {
         yield put({ type: "FETCH_FAILED", error })
     }
 }
 
+//Добавление Марш. листа в Список
 function* watchAddMarshList(action) {
     yield takeEvery("ADD_MARSHLIST", addMarshlist)
 }
 
 function* addMarshlist(action) {
     try {
+        const state = yield select();
+
         yield put({ type: 'SHOW_LOADING', showLoading: true });
-        const addedmarsh = yield call(addMarshList, action.auth, action.params); //Обрабатывать ошибки!!!
+        const addedmarsh = yield call(addMarshList, state.auth, action.params); ///action.auth, action.params); //Обрабатывать ошибки!!!
 
         //Обновляем марш. листы
-        const dataML = yield call(getListData, action.auth, "ML1");
+        const dataML = yield call(getListData, state.auth, "ML1");
         //значения полей PROPERTY_ являлись объектом = приводим из к простым значениям
         var convML = dataML.result.map(d => {
             Object.keys(d).forEach(p =>
@@ -170,14 +177,14 @@ function* addMarshlist(action) {
     }
 }
 
-
+//-----Удаление марш. листа. Сначала удалются задания и Б24-задачи -----//
 function* watchDeleteMarshList(action) {
     yield takeEvery("DELETE_MARSHLIST", removeMarshlist)
 }
 
-function* deleteTaskListAndUserTask(item, action, metadata) {
-    const deltsllist = yield call(deleteTaskList, action.auth, item.ID);
-    const delusertsk = yield call(deleteUserTask, action.auth, item[BPropTL(metadata, "ID Задачи")])
+function* deleteTaskListAndUserTask(item, auth, metadata) {//  //action, metadata) {
+    const deltsllist = yield call(deleteTaskList, auth, item.ID) //  action.auth, item.ID);
+    const delusertsk = yield call(deleteUserTask, auth, item[BPropTL(metadata, "ID Задачи")]);//   action.auth, item[BPropTL(metadata, "ID Задачи")])
 }
 
 function* removeMarshlist(action) {
@@ -198,19 +205,18 @@ function* removeMarshlist(action) {
         }
         const prevML = deletedPos == 0 ? {} : state.marshListData[deletedPos - 1]// Марш. лист перед удаляумым
 
-
         //Удаляем задания и задачи
-        yield all(tasksByML.map(item => call(deleteTaskListAndUserTask, item, action, metadata)));
+        yield all(tasksByML.map(item => call(deleteTaskListAndUserTask, item, state.auth, metadata))); //item, action, metadata)));
 
-        const delData = yield call(deleteMarshList, action.auth, action.id); //ERRORS!!
+        const delData = yield call(deleteMarshList, state.auth, action.id);//    action.auth, action.id); //ERRORS!!
         //Решить, на какую позицию должен переместиться курсор
 
-        const dataML = yield call(getListData, action.auth, "ML1");
+        const dataML = yield call(getListData, state.auth, "ML1"); // action.auth, "ML1");
 
         let convML = objValToVal(dataML.result)
         yield put({ type: 'MARSHLIST_DATA_GET', marshListData: convML })
 
-        const dataTL = yield call(getListData, action.auth, "TL1");
+        const dataTL = yield call(getListData, state.auth, "TL1");//  action.auth, "TL1");
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
 
@@ -224,24 +230,28 @@ function* removeMarshlist(action) {
         yield put({ type: "FETCH_FAILED", error })
     }
 }
+//-----Удаление   МЛ -----//
 
-
+//обновление Мар.листа
 function* watchUpdateMarshList(action) {
     yield takeEvery("UPDATE_MARSHLIST", changeMarshlist)
 }
 
 function* changeMarshlist(action) {
     try {
-        const updateData = yield call(updateMarshList, action.auth, action.params); //DO ERRORS!!
+        const state = yield select();
+        const updateData = yield call(updateMarshList, state.auth, action.params); //DO ERRORS!!
 
-        const dataML = yield call(getListData, action.auth, "ML1");
-        //значения полей PROPERTY_ являлись объектом = приводим иx к простым значениям
-        var convML = dataML.result.map(d => {
-            Object.keys(d).forEach(p =>
-                p.includes('PROPERTY_') ? d[p] = d[p][Object.keys(d[p])[0]] : d[p] = d[p]
-            )
-            return d
-        })
+        const dataML = yield call(getListData, state.auth, "ML1");
+        // //значения полей PROPERTY_ являлись объектом = приводим иx к простым значениям
+        // var convML = dataML.result.map(d => {
+        //     Object.keys(d).forEach(p =>
+        //         p.includes('PROPERTY_') ? d[p] = d[p][Object.keys(d[p])[0]] : d[p] = d[p]
+        //     )
+        //     return d
+        // })
+
+        let convML = objValToVal(dataML.result);
 
         yield put({ type: 'MARSHLIST_DATA_GET', marshListData: convML });
     }
@@ -250,16 +260,18 @@ function* changeMarshlist(action) {
     }
 }
 
-function* watchGetCompanies(action) {
+//Компании с фильтром по адресу
+function* watchGetCompanies() {
     yield takeEvery("GET_ALLCOMPANIES", GetCompanies)
 }
 
-function* GetCompanies(action) {
+function* GetCompanies() {
     try {
-        const flds = yield call(getCompanyFields, action.auth);  //DO ERRORS!!
+        const state = yield select();
+        const flds = yield call(getCompanyFields, state.auth);  //DO ERRORS!!
         yield put({ type: 'COMPANY_FIELDS', companyFields: flds.result })
 
-        const compData = yield call(getCompanies, action.auth);//Получаем компании через List-method рекурсивно
+        const compData = yield call(getCompanies, state.auth);//Получаем компании через List-method рекурсивно
 
         //уберем тех, у кого нет адреса
         let B24adr = null; //имя поля  в Б24
@@ -274,11 +286,6 @@ function* GetCompanies(action) {
         } else {
             yield put({ type: 'GET_COMPANIES', companies: compData });
         }
-
-
-
-
-
     } catch (err) {
         yield put({ type: "FETCH_FAILED", err })
     }
@@ -290,25 +297,25 @@ const BPropTL = (metadata, title) => {
     }
 }
 
+//Удаление задания из Списка и Б24-задачи
 function* watchDeleteTaskList(action) {
     yield takeEvery("DELETE_TASKLIST", removeTasklist)
 }
 //Удаляем задание из списка и Б24-задачу
 function* removeTasklist(action) {
-
     try {
+        const state = yield select();
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
-        const delData = yield call(deleteTaskList, action.auth, action.taskListRecord.ID);  //    action.id); //ERRORS!!
+        const delData = yield call(deleteTaskList, state.auth, action.taskListRecord.ID);  //    action.id); //ERRORS!!
 
         //Удалить Б24-задачу
-        let state = yield select();
         const delTskdata = yield call(deleteUserTask,
-            action.auth,
+            state.auth,
             action.taskListRecord[BPropTL(state.taskListFields, "ID Задачи")]);
 
         //Обновление
-        const dataTL = yield call(getListData, action.auth, "TL1");
+        const dataTL = yield call(getListData, state.auth, "TL1");
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
 
@@ -322,18 +329,17 @@ function* removeTasklist(action) {
 
 
 
-//////////---new---/////////
+/////////Добавляет новое задание в Список, сначала создав Б24-задачу//////////
 function* watchAddNewUserTask(action) {
     yield takeEvery("ADD_NEW_USERTASK", add_NewUserTask)
 }
 
 function* add_NewUserTask(action) {
     try {
+        const state = yield select();
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
-        //?? const state = yield select(); //передать в api
-
-        const dataTask = yield call(addNewUserTask, action.auth, action.userTaskParams);
+        const dataTask = yield call(addNewUserTask, state.auth, action.userTaskParams);
 
         let ltp = action.listTaskParams;
 
@@ -341,9 +347,9 @@ function* add_NewUserTask(action) {
 
         ltp.task_status = "-" //новая, нестартовавшая задача
 
-        const dataTaskList = yield call(addTaskInList, action.auth, action.listTaskParams)//, state)
+        const dataTaskList = yield call(addTaskInList, state.auth, action.listTaskParams)//, state)
 
-        const dataTL = yield call(getListData, action.auth, "TL1");
+        const dataTL = yield call(getListData, state.auth, "TL1");
 
         //Снова получим весь список заданий но было б лучше просто добавить сохраненный объект в массив 
         let convTL = objValToVal(dataTL.result)
@@ -357,6 +363,9 @@ function* add_NewUserTask(action) {
         yield put({ type: "FETCH_FAILED", error })
     }
 }
+//---------------------------------//
+
+
 
 //Обновление задания и Б24-задачи
 function* watchUpdateTaskList(action) {
@@ -365,12 +374,12 @@ function* watchUpdateTaskList(action) {
 
 function* update_UserTask(action) {
     try {
+        const state = yield select();
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
         //Обновляем Б24-задачу
-        ///---> updateUserTask(auth, task_id, resp_id, title, task, gis, company_id)
         const updated_UserTask = yield call(updateUserTask,
-            action.auth,
+            state.auth,
             action.listTaskParams.task_id,
             action.listTaskParams.responsible_id,
             action.listTaskParams.address,
@@ -380,9 +389,9 @@ function* update_UserTask(action) {
         )
 
         // обновляем запись в Списке 
-        const updated_ListTask = yield call(updateTaskListRecord, action.auth, action.listTaskParams, action.listTaskParams.task_id)//      newdataTask.result)//, state.taskListFields);
+        const updated_ListTask = yield call(updateTaskListRecord, state.auth, action.listTaskParams, action.listTaskParams.task_id)//      newdataTask.result)//, state.taskListFields);
 
-        const dataTL = yield call(getListData, action.auth, "TL1");
+        const dataTL = yield call(getListData, state.auth, "TL1");
 
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
@@ -393,19 +402,21 @@ function* update_UserTask(action) {
         yield put({ type: "FETCH_FAILED", error })
     }
 }
+///----------------------///
 
-///-----------
+///Устанавливает задачам статус "Выполняется"
 function* watchStartingTask(action) {
     yield takeEvery("STARTING_TASKS", Starting_Task)
 }
 
 function* Starting_Task(action) {
     try {
+        const state = yield select();
         yield put({ type: 'SHOW_LOADING', showLoading: true });
 
         yield all(action.taskRecords.map(item => call(StartTask, item, action)));
 
-        const dataTL = yield call(getListData, action.auth, "TL1");
+        const dataTL = yield call(getListData, state.auth, "TL1");
         let convTL = objValToVal(dataTL.result)
         yield put({ type: 'TASKLIST_DATA_GET', taskListData: convTL });
 
@@ -420,7 +431,7 @@ function* StartTask(item, action) {
     try {
         const state = yield select();
 
-        const userTask = yield call(startUserTask, action.auth, item[BPropTL(state.taskListFields, "ID Задачи")])
+        const userTask = yield call(startUserTask, state.auth, item[BPropTL(state.taskListFields, "ID Задачи")])
 
         //Последнее свойство - это Status Б24 задачи
         item[Object.keys(item)[Object.keys(item).length - 1]] = 'выполняется'
@@ -432,7 +443,7 @@ function* StartTask(item, action) {
                 pars += "&fields[" + flds[i] + "]=" + item[flds[i]]
             }
         }
-        const updatetaskrec = yield call(updateTaskListRecordFlds, action.auth, pars);
+        const updatetaskrec = yield call(updateTaskListRecordFlds, state.auth, pars);
     } catch (err) {
         yield put({ type: "FETCH_FAILED", err })
     }

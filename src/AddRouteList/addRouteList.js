@@ -1,28 +1,26 @@
 import React, { Component } from 'react'
 import { Modal, Form, Input, Button, DatePicker, Select } from 'antd';
 import { connect } from 'react-redux'
-
 const { Option } = Select;
-const { TextArea } = Input;
-
+//const { TextArea } = Input;
 
 const getUsers = (authData) => {
-    return { type: "START_GET_USERS", auth: authData }
+    return { type: "START_GET_USERS" }//, auth: authData }
 }
-const addMarshList = (authData, params) => {
-    return { type: "ADD_MARSHLIST", auth: authData, params: params }
+const addMarshList = (params) => {//  (authData, params) => {
+    return { type: "ADD_MARSHLIST", params: params } //  auth: authData, params: params }
 }
 
 const DtoP = (dispatch) => {
     return {
-        getUsers: (a) => dispatch(getUsers(a)),
-        addMarshList: (a, p) => dispatch(addMarshList(a, p))   //{ type: "ADD_MARSHLIST", auth: a, params: p })//addMarshList(a, p)),
+        getUsers: () => dispatch(getUsers()),//a)),
+        addMarshList: (p) => dispatch(addMarshList(p))   //{ type: "ADD_MARSHLIST", auth: a, params: p })//addMarshList(a, p)),
     }
 }
 
 const StoP = (state) => {
     return {
-        auth: state.auth,
+        // auth: state.auth,
         marshListFields: state.marshListFields, //метаданные полей MarshList
         marshListData: state.marshListData, //все марш. листы,
         users: state.users
@@ -35,24 +33,24 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
     class extends React.Component {
         state = { visible: false }
 
-
         onCancel = () => {
             this.setState({ visible: false });
             this.props.form.resetFields()
         }
 
         onCreateButtonClick = () => {
-            //ВЫЧИСТИТЬ ГОВНОКОД
             if (!this.props.users.length) {
-                this.props.getUsers(this.props.auth)
-                this.setState({ visible: true })
+                this.props.getUsers();//this.props.auth)
+
             }
-            let self = this;
-            setTimeout(() => {
-                if (self.props.users.length > 0) {
-                    self.setState({ visible: true })
-                }
-            }, 200)
+            this.setState({ visible: true });
+
+            // let self = this;
+            // setTimeout(() => {
+            //     if (self.props.users.length > 0) {
+            //         self.setState({ visible: true })
+            //     }
+            // }, 1200)
         }
 
         BProp = (title) => {
@@ -68,17 +66,17 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
             this.props.form.validateFields((err, values) => {
                 if (!err) {
                     let userObj = this.props.users.filter(usr => usr.ID === values.user)[0];
-                    let formvals = Object.assign({}, { user: userObj, comment: values.comment, date: values.date.format("DD.MM.YYYY") })
-
-                    let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=ML1&" + "fields[" + this.BProp("Название") + "]" + "=МЛ" + "&" +
-                        "fields[" + this.BProp("Исполнитель") + "]" + "=" + formvals.user.LAST_NAME + " " + formvals.user.NAME + "&" +
-                        "fields[" + this.BProp("ID Исполнителя") + "]" + "=" + formvals.user.ID + "&" +
-                        "fields[" + this.BProp("Дата") + "]" + "=" + formvals.date + "&" +
-                        "fields[" + this.BProp("Комментарий") + "]" + "=" + formvals.comment + "&" +
-                        "fields[" + this.BProp("Расстояние") + "]" + "=0" + "&" +
+                    //let formvals = Object.assign({}, { user: userObj, comment: values.comment, date: values.date.format("DD.MM.YYYY") })
+                    //formvals не нужен
+                    let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=ML1&" + "fields[" + this.BProp("Название") + "]=МЛ" + "&" +
+                        "fields[" + this.BProp("Исполнитель") + "]=" + userObj.LAST_NAME + " " + userObj.NAME + "&" +
+                        "fields[" + this.BProp("ID Исполнителя") + "]=" + userObj.ID + "&" +
+                        "fields[" + this.BProp("Дата") + "]=" + values.date.format("DD.MM.YYYY") + "&" +
+                        "fields[" + this.BProp("Комментарий") + "]=" + values.comment + "&" +
+                        "fields[" + this.BProp("Расстояние") + "]=0" + "&" +
                         "ELEMENT_CODE=" + (new Date().getTime())
 
-                    this.props.addMarshList(this.props.auth, params);
+                    this.props.addMarshList(params); //    this.props.auth, params);
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {
                         self.setState({ visible: false });
@@ -91,7 +89,7 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
         };
 
         render() {
-            const { users, onCancel, onCreate, form } = this.props;
+            const { users, form } = this.props;
             const { visible } = this.state;
 
             // ///???? value
@@ -150,5 +148,4 @@ const AddRoute_List = Form.create({ name: 'addMarshList_modal' })(
 );
 
 const AddRouteList = connect(StoP, DtoP)(AddRoute_List)
-
 export default AddRouteList;

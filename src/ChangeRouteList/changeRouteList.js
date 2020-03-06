@@ -8,14 +8,14 @@ const { Option } = Select;
 const getUsers = (authData) => {
     return { type: "START_GET_USERS", auth: authData }
 }
-const updateMarshList = (authData, params) => {
-    return { type: "UPDATE_MARSHLIST", auth: authData, params: params }
+const updateMarshList = (params) => {
+    return { type: "UPDATE_MARSHLIST", params: params }
 }
 
 const DtoP = (dispatch) => {
     return {
         getUsers: (a) => dispatch(getUsers(a)),
-        updateMarshList: (a, p) => dispatch(updateMarshList(a, p))
+        updateMarshList: (p) => dispatch(updateMarshList(p))
     }
 }
 
@@ -57,7 +57,7 @@ const ChangeRoute_List = Form.create({ name: 'changeMarshList_modal' })(
                         "fields[" + this.BProp("Комментарий") + "]" + "=" + formvals.comment + "&" +
                         "fields[" + this.BProp("Расстояние") + "]" + "=" + this.props.selectedMarshList[this.BProp("Расстояние")]
 
-                    this.props.updateMarshList(this.props.auth, params);
+                    this.props.updateMarshList(params);
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {
                         self.props.manageVisible();

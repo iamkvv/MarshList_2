@@ -10,8 +10,8 @@ const { TextArea } = Input;
 //     return { type: "START_GET_USERS", auth: authData }
 // }
 
-const addNewUserTask = (authData, ut_params, lt_params) => {
-    return { type: "ADD_NEW_USERTASK", auth: authData, userTaskParams: ut_params, listTaskParams: lt_params }
+const addNewUserTask = (ut_params, lt_params) => {
+    return { type: "ADD_NEW_USERTASK", userTaskParams: ut_params, listTaskParams: lt_params }
 }
 
 // const addTaskList = (authData, params) => {
@@ -20,14 +20,13 @@ const addNewUserTask = (authData, ut_params, lt_params) => {
 
 const DtoP = (dispatch) => {
     return {
-        // addTaskList: (a, p) => dispatch(addTaskList(a, p)),
-        addNewUserTask: (a, utpars, ltpars) => dispatch(addNewUserTask(a, utpars, ltpars))
+        addNewUserTask: (utpars, ltpars) => dispatch(addNewUserTask(utpars, ltpars))
     }
 }
 
 const StoP = (state) => {
     return {
-        auth: state.auth,
+        //auth: state.auth,
         marshListFields: state.marshListFields, //метаданные полей MarshList
         taskListFields: state.taskListFields,
         //  marshListData: state.marshListData, //все марш. листы,
@@ -40,13 +39,11 @@ const StoP = (state) => {
 const Add_Task = Form.create({ name: 'addTask_modal' })(
 
     class extends React.Component {
-        //  state = { visible: false }
 
         onCancel = () => {
             this.props.manageAddTask_Visible()
             this.props.form.resetFields()
         }
-
 
         BProp = (title) => {
             for (let fld of Object.keys(this.props.marshListFields)) {
@@ -66,7 +63,7 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
 
         handleSubmit = e => {
             e.preventDefault();
-            let self = this;
+            //  let self = this;
 
             this.props.form.validateFields((err, values) => {
                 if (!err) {
@@ -99,15 +96,15 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
                         task_status: null
                     }
 
-                    this.props.addNewUserTask(this.props.auth, UserTaskParams, TaskListParams)
+                    this.props.addNewUserTask(UserTaskParams, TaskListParams)
 
                     //ГОВОНОКОДИЩЕ  - сделать редюсеры
                     setTimeout(() => {
-                        self.props.form.resetFields();
+                        this.props.form.resetFields();
                         this.props.manageAddTask_Visible();
 
                     }, 500)
-                    //this.props.onCreate(formvals, this.props.form);
+
                 } else {
                     console.log('ERR', err, values);
                 }
@@ -115,7 +112,7 @@ const Add_Task = Form.create({ name: 'addTask_modal' })(
         };
 
         render() {
-            const { visible, companies, onCancel, onCreate, form } = this.props;
+            const { visible, companies, form } = this.props;
             const Companies = companies.map((comp) =>
                 (<Option key={comp.ID}>{`${comp.TITLE}`}</Option>)
             );

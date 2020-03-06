@@ -13,21 +13,21 @@ const getCompanies = (authData) => {
     return { type: "GET_ALLCOMPANIES", auth: authData }
 }
 
-const startingTasks = (authData, taskRecords) => {
-    return { type: "STARTING_TASKS", auth: authData, taskRecords: taskRecords }
+const startingTasks = (taskRecords) => {
+    return { type: "STARTING_TASKS", taskRecords: taskRecords }
 }
 
 const selectTaskList = (tl) => {
     return { type: "SELECTED_TASKLIST", selectedTaskList: tl }
 }
 
-const deleteTaskList = (authData, record) => {
-    return { type: "DELETE_TASKLIST", auth: authData, taskListRecord: record }
+const deleteTaskList = (record) => {
+    return { type: "DELETE_TASKLIST", taskListRecord: record }
 }
 
-const getLids = (authData) => {
-    return { type: "GET_LIDS", auth: authData }
-}
+// const getLids = (authData) => {
+//     return { type: "GET_LIDS", auth: authData }
+// }
 
 const BProp = (metaTsk, title) => {//Возврашает PROPERTY_n по русс. имени поля
     for (let fld of Object.keys(metaTsk)) {
@@ -37,19 +37,19 @@ const BProp = (metaTsk, title) => {//Возврашает PROPERTY_n по рус
 
 const DtoP = (dispatch) => {
     return {
-        getCompanies: (a) => dispatch(getCompanies(a)),
-        getLids: (a) => dispatch(getLids(a)),
+        getCompanies: () => dispatch(getCompanies()),
+        //  getLids: (a) => dispatch(getLids(a)),
 
-        startingTasks: (a, taskRecords) => dispatch(startingTasks(a, taskRecords)),
+        startingTasks: (taskRecords) => dispatch(startingTasks(taskRecords)),
 
-        deleteTaskList: (a, rec) => dispatch(deleteTaskList(a, rec)),
+        deleteTaskList: (rec) => dispatch(deleteTaskList(rec)),
         selectTaskList: (tl) => dispatch(selectTaskList(tl))
     }
 }
 
 const StoP = (state) => {
     return {
-        auth: state.auth,
+        // auth: state.auth,
         taskListFields: state.taskListFields, //метаданные полей 
         taskListData: state.taskListData, //все задания,
         companies: state.companies,
@@ -128,14 +128,13 @@ class Task_List extends Component {
         }
 
         if (!this.props.companies.length) { //Если компании еще не получены, сага должна их получить
-            this.props.getCompanies(this.props.auth)
+            this.props.getCompanies();//this.props.auth)
         }
 
         setTimeout(() => {
             this.setState({
                 addTaskformVisible: !this.state.addTaskformVisible
             });
-
         }, 300)
     }
 
@@ -146,7 +145,7 @@ class Task_List extends Component {
         }
 
         if (!this.props.companies.length) { //Если компании еще не получены, сага должна их получить
-            this.props.getCompanies(this.props.auth)
+            this.props.getCompanies()
         }
 
         setTimeout(() => {
@@ -157,17 +156,21 @@ class Task_List extends Component {
         }, 300)
     }
 
-
     manageYandexRoute_Visible = () => {
         if (!this.props.selectedMarshList) {
             this.warning("Не выбран маршрутный лист.")
             return
         }
+
+        if (!this.props.tasksByML.length) {
+            this.warning("Нет данных для построения маршрута.")
+            return
+        }
+
         setTimeout(() => {
             this.setState({
                 yandexRoutesVisible: !this.state.yandexRoutesVisible
             });
-
         }, 300)
     }
 
@@ -178,7 +181,7 @@ class Task_List extends Component {
             return
         }
 
-        this.props.startingTasks(this.props.auth, this.props.tasksByML);
+        this.props.startingTasks(this.props.tasksByML);
     }
 
     //Это потом удалить, оставить только BProp
@@ -194,7 +197,7 @@ class Task_List extends Component {
             return
         }
 
-        this.props.deleteTaskList(this.props.auth, this.props.selectedTaskList);  //this.state.selectedTaskList.ID);
+        this.props.deleteTaskList(this.props.selectedTaskList);  //this.state.selectedTaskList.ID);
 
         setTimeout(() => {
             this.setState({ showDeleteModal: false })

@@ -11,20 +11,20 @@ const BProp = (metaTsk, title) => {//Возврашает PROPERTY_n по рус
     }
 }
 
-const updateMarshList = (authData, params) => {
-    return { type: "UPDATE_MARSHLIST", auth: authData, params: params }
+const updateMarshList = (params) => {
+    return { type: "UPDATE_MARSHLIST", params: params }   // auth: authData, params: params }
 }
 
 const DtoP = (dispatch) => {
     return {
         getCompanies: (a) => dispatch(getCompanies(a)),
-        updateMarshList: (a, p) => dispatch(updateMarshList(a, p))
+        updateMarshList: (p) => dispatch(updateMarshList(p))
     }
 }
 
 const StoP = (state) => {
     return {
-        auth: state.auth,
+        // auth: state.auth,
         taskListFields: state.taskListFields, //метаданные полей 
         marshListFields: state.marshListFields,
         taskListData: state.taskListData, //все задания,
@@ -48,6 +48,13 @@ class Yandex_Routes extends Component {
     mapInstance = null;
     ymapi = null;
 
+    componentDidUpdate(prevProps) {
+        if (!prevProps.visible && this.props.visible) {
+            this.createRoute();
+
+        }
+    }
+
     onLoadMap = (apiobj) => {
         this.ymapi = apiobj;
     }
@@ -60,6 +67,7 @@ class Yandex_Routes extends Component {
 
     createRoute = () => {
         const { tasksByML } = this.props;
+        console.log('tasksByML', tasksByML)
 
         var RouteAddrs = [];
 
@@ -78,7 +86,7 @@ class Yandex_Routes extends Component {
 
         let self = this;
         this.ymapi.route(
-            RouteAddrs
+            RouteAddrs, { mapStateAutoApply: true }
         ).then(function (route) {
             self.mapInstance.geoObjects.removeAll()
             self.mapInstance.geoObjects.add(route);
@@ -91,55 +99,51 @@ class Yandex_Routes extends Component {
             // Задаем контент меток в начальной и конечной точках.
             points.get(0).properties.set('iconContent', 'старт: ' + points.get(0).properties.get("name"));
             points.get(lastPoint).properties.set('iconContent', 'финиш: ' + points.get(lastPoint).properties.get("name"));
-            // debugger;
-            var moveList = 'Трогаемся,</br>',
-                way, segments;
+
+            // var moveList = 'Трогаемся,</br>',
+            var way, segments;
             var meters = 0;
             // Получаем массив путей.
             for (var i = 0; i < route.getPaths().getLength(); i++) {
                 way = route.getPaths().get(i);
+                meters += way.getLength();
+                /*
                 segments = way.getSegments();
+                debugger
                 for (var j = 0; j < segments.length; j++) {
                     var street = segments[j].getStreet();
                     meters += segments[j].getLength();
                     moveList += ('Едем ' + segments[j].getHumanAction() + (street ? ' на ' + street : '') + ', проезжаем ' + segments[j].getLength() + ' м.,');
                     moveList += '</br>'
                 }
+                */
             }
-            moveList += 'Останавливаемся.';
-
-            //массив заданий для вывода под картой
-            //  let tasks = tasksByRouteList.map(tsk => ({ Company: tsk.COMPANY, Tel: tsk.TEL, Address: tsk.ADDRESS, Task: tsk.TASK }))
-
-            // console.log("PrintTasks!!", tasks);
-
-            // self.setState({ taskList: tasks });
-            // Выводим маршрутный лист.
-            // $('#list').append(moveList);
-            // $('#meters').append(meters/1000);
+            //moveList += 'Останавливаемся.';
             //alert("Длина маршрута " + Math.round(meters / 1000) + " км")
-
             //(elementid,iblockid, name, user_id, fio, date, comment,path)
 
+            // self.mapInstance.setBounds(self.mapInstance.geoObjects.getBounds());
+            // debugger;
+            self.saveDistanse(Math.round(meters / 1000));
             self.setState({ distanse: Math.round(meters / 1000) })
         })
     }
 
-    saveDistanse = () => {
+    saveDistanse = (dist) => {
         //Обновить расстояние марш.листа
         const { selectedMarshList, marshListFields } = this.props;
 
         let params = "&IBLOCK_TYPE_ID=lists&IBLOCK_CODE=ML1&ELEMENT_ID=" + selectedMarshList.ID + "&" +
-            "fields[" + this.BProp(marshListFields, "Название") + "]" + "=МЛ" + "&" +
-            "fields[" + this.BProp(marshListFields, "Исполнитель") + "]" + "=" + selectedMarshList[this.BProp(marshListFields, "Исполнитель")] + "&" +
-            "fields[" + this.BProp(marshListFields, "ID Исполнителя") + "]" + "=" + selectedMarshList[this.BProp(marshListFields, "ID Исполнителя")] + "&" +
-            "fields[" + this.BProp(marshListFields, "Дата") + "]" + "=" + selectedMarshList[this.BProp(marshListFields, "Дата")] + "&" +
-            "fields[" + this.BProp(marshListFields, "Комментарий") + "]" + "=" + selectedMarshList[this.BProp(marshListFields, "Комментарий")] + "&" +
-            "fields[" + this.BProp(marshListFields, "Расстояние") + "]" + "=" + this.state.distanse//+ " км"
+            "fields[" + this.BProp(marshListFields, "Название") + "]=МЛ" + "&" +
+            "fields[" + this.BProp(marshListFields, "Исполнитель") + "]=" + selectedMarshList[this.BProp(marshListFields, "Исполнитель")] + "&" +
+            "fields[" + this.BProp(marshListFields, "ID Исполнителя") + "]=" + selectedMarshList[this.BProp(marshListFields, "ID Исполнителя")] + "&" +
+            "fields[" + this.BProp(marshListFields, "Дата") + "]=" + selectedMarshList[this.BProp(marshListFields, "Дата")] + "&" +
+            "fields[" + this.BProp(marshListFields, "Комментарий") + "]=" + selectedMarshList[this.BProp(marshListFields, "Комментарий")] + "&" +
+            "fields[" + this.BProp(marshListFields, "Расстояние") + "]=" + dist // this.state.distanse//+ " км"
 
-        this.props.updateMarshList(this.props.auth, params);
+        this.props.updateMarshList(params);//this.props.auth, params);
 
-        message.info(`Длина маршрута : ${this.state.distanse} км`);
+        message.info(`Длина маршрута : ${dist} км`)  // ${this.state.distanse} км`);
     }
 
     onClickCalc = () => {
@@ -151,13 +155,14 @@ class Yandex_Routes extends Component {
     }
 
     printMarshList = () => {
-        // var content = document.getElementById(divId).innerHTML;
+
         const { taskListFields } = this.props;
         let tasks = this.props.tasksByML.map((item, i) => (
             {
                 num: i + 1,
                 company: item[this.BProp(taskListFields, "Компания")],
                 address: item[this.BProp(taskListFields, "Адрес")],
+                tel: item[this.BProp(taskListFields, "Телефон")],
                 task: item[this.BProp(taskListFields, "Задание")]
             }
         ))
@@ -181,14 +186,15 @@ class Yandex_Routes extends Component {
     render() {
         return (
             <Modal
+                forceRender={true}
                 visible={this.props.visible}
                 style={{ top: 20 }}
                 bodyStyle={{ width: 650, padding: 0, minHeight: 600 }}
                 width={650}
                 centered
                 title={<div>
-                    <Button onClick={this.createRoute}>Построить маршрут</Button>
-                    <Button style={{ margin: '0 7px' }} onClick={this.saveDistanse}>Сохранить расстояние</Button>
+                    {/** <Button onClick={this.createRoute}>Построить маршрут</Button>  
+                    <Button style={{ margin: '0 7px 0 0' }} onClick={this.saveDistanse}>Сохранить расстояние</Button>*/}
                     <Button onClick={this.printMarshList}>Распечатать</Button>
                 </div>}
                 onCancel={this.onCancel}
@@ -207,7 +213,7 @@ class Yandex_Routes extends Component {
                             zoom: 13
                         }}
 
-                            style={{ margin: '20px auto', width: 600, height: 600 }}
+                            style={{ margin: '20px auto', zIndex: 10000, width: '600px', height: '600px' }}
                             instanceRef={(map) => this.mapInstance = map}
                             onLoad={(y) => {
                                 this.onLoadMap(y)
